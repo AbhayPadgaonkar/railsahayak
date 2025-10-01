@@ -33,9 +33,9 @@ const RecommendationCard = ({
 
   return (
     // ADDED a minimum height (min-h-60) and REMOVED redundant flex-shrink-0 class.
-    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 transition-all duration-200 hover:shadow-2xl hover:border-gray-600 flex flex-col h-full min-h-60">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 transition-all duration-200 hover:shadow-2xl hover:border-gray-600 flex flex-col  min-h-60">
       <div className="flex justify-between items-start mb-2">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <h3 className="font-semibold text-white">{title}</h3>
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${priorityColorClass}`}>
           {priority}
         </span>
@@ -149,7 +149,7 @@ const AIRecommendationPanel = () => {
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // Corresponds to xl:grid-cols-5 to show one full row
+  const itemsPerPage = 4; // Corresponds to xl:grid-cols-5 to show one full row
 
   const totalPages = Math.ceil(recommendations.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -167,7 +167,7 @@ const AIRecommendationPanel = () => {
 
   return (
     // REMOVED max-height and flex properties from this container
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg">
+    <div className=" bottom-0 left-0 right-0 z-50 p-4 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg max-h-80">
       <div className="flex justify-between items-center mb-4 px-4">
         <h2 className="text-xl font-bold text-gray-100">AI Recommendations</h2>
         {totalPages > 1 && (
@@ -193,7 +193,7 @@ const AIRecommendationPanel = () => {
         )}
       </div>
       {/* REMOVED overflow-y-auto, the content will now paginate */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 px-4 pb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-2">
         {currentRecommendations.map((rec) => (
           <RecommendationCard key={rec.id} {...rec} />
         ))}

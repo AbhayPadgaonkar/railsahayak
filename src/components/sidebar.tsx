@@ -1,34 +1,55 @@
 import React from 'react';
 import Link from 'next/link';
-import { Siren } from 'lucide-react';
-import { GitPullRequestArrow } from 'lucide-react';
-import { FileClock } from 'lucide-react';
+import { Siren, GitPullRequestArrow, FileClock } from 'lucide-react';
 
 export default function Sidebar() {
-    return(    // Key classes: sticky, top-0, h-screen, w-64
-    <aside className="bg-sky-200 text-black w-70   sticky top-0 flex-shrink-0">
-      <div className="p-4">
-        <h2 className="text-xl font-bold mb-4">Dashboard</h2>
-        <nav>
-          <ul>
-           
-            <li>
-              <Link href="/crisismanagement" className=" flex items-center justify-start gap-2 py-2 px-4 rounded hover:bg-gray-700"><Siren className='w-6 h-6' />
-                Crisis Management
-              </Link>
-            </li>
-            <li>
-              <Link href="/whatifsimulations" className="flex items-center justify-start gap-2 py-2 px-4 rounded hover:bg-gray-700"><GitPullRequestArrow className='w-6 h-6' />
-                What If Simulations
-              </Link>
-            </li>
-            <li>
-              <Link href="/auditlogs" className="flex items-center justify-start gap-2 py-2 px-4 rounded hover:bg-gray-700"><FileClock className='w-6 h-6' />
-                Audit Logs
-              </Link>
-            </li>
-          </ul>
-        </nav>
+  return (
+    // Main container: Dark theme, fixed width, full height, and subtle right border for separation.
+    <aside className="bg-gray-800 text-gray-300 w-55 h-full pt-4 flex flex-col flex-shrink-0 border-r border-gray-700">
+      
+      {/* Sidebar Header */}
+      <div className="mb-8 px-2">
+        <h2 className="text-2xl font-bold text-white tracking-tight">Dashboard</h2>
       </div>
-    </aside>)
+      
+      {/* Navigation Links */}
+      <nav>
+        {/* Using space-y-2 for consistent vertical spacing between links */}
+        <ul className="space-y-2">
+          <li>
+            <Link 
+              href="/crisismanagement" 
+              className="flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-sky-600 hover:text-white"
+            >
+              <Siren className='w-5 h-5' />
+              <span>Crisis Management</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              href="/whatifsimulations" 
+              className="flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-sky-600 hover:text-white"
+            >
+              <GitPullRequestArrow className='w-5 h-5' />
+              <span>What If Simulations</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              href="/auditlogs" 
+              className="flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-sky-600 hover:text-white"
+            >
+              <FileClock className='w-5 h-5' />
+              <span>Audit Logs</span>
+            </Link>
+          </li>
+        </ul>
+      </nav>
+      
+      {/* This div pushes content to the bottom of the sidebar, useful for a user profile or logout button */}
+      <div className="mt-auto">
+        {/* You can add a user profile component here */}
+      </div>
+    </aside>
+  );
 }
