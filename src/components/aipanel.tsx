@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Type definition for a single recommendation card's data
 interface RecommendationCardProps {
@@ -14,7 +14,7 @@ interface RecommendationCardProps {
   onDismiss: (id: string) => void;
 }
 
-// RecommendationCard component for dark theme
+// RecommendationCard component (unchanged)
 const RecommendationCard = ({
   id,
   title,
@@ -32,8 +32,7 @@ const RecommendationCard = ({
   }[priority];
 
   return (
-    // ADDED a minimum height (min-h-60) and REMOVED redundant flex-shrink-0 class.
-    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 transition-all duration-200 hover:shadow-2xl hover:border-gray-600 flex flex-col  min-h-60">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 transition-all duration-200 hover:shadow-2xl hover:border-gray-600 flex flex-col min-h-60">
       <div className="flex justify-between items-start mb-2">
         <h3 className="font-semibold text-white">{title}</h3>
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${priorityColorClass}`}>
@@ -41,7 +40,6 @@ const RecommendationCard = ({
         </span>
       </div>
       
-      {/* Content area that needs to stretch */}
       <div className="flex-grow flex flex-col justify-end">
         <p className="text-sm text-gray-400 mb-1">
           <strong className="font-medium text-gray-300">Location:</strong> {location}
@@ -54,7 +52,6 @@ const RecommendationCard = ({
         </p>
       </div>
 
-      {/* Buttons will now always be at the bottom */}
       <div className="flex gap-2 mt-auto">
         <button
           onClick={() => onAccept(id)}
@@ -72,6 +69,45 @@ const RecommendationCard = ({
     </div>
   );
 };
+
+/**
+ * NEW: Custom hook to dynamically determine the number of items per page.
+ * It listens to window resize events and returns a number that matches the
+ * Tailwind CSS responsive grid column classes (grid-cols-1, sm:grid-cols-2, lg:grid-cols-4).
+ */
+const useItemsPerPage = () => {
+  // Helper function to calculate items based on window width
+  const getItemsCount = () => {
+    if (typeof window === 'undefined') {
+      return 4; // Default for server-side rendering
+    }
+    // Corresponds to lg:grid-cols-4 (screens >= 1024px)
+    if (window.innerWidth >= 1024) {
+      return 4;
+    }
+    // Corresponds to sm:grid-cols-2 (screens >= 640px)
+    if (window.innerWidth >= 640) {
+      return 2;
+    }
+    // Corresponds to grid-cols-1 (default for smaller screens)
+    return 1;
+  };
+
+  const [itemsPerPage, setItemsPerPage] = useState(getItemsCount());
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(getItemsCount());
+    };
+
+    window.addEventListener('resize', handleResize);
+    // Cleanup listener on component unmount
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return itemsPerPage;
+};
+
 
 // Main AI Recommendation Panel component
 const AIRecommendationPanel = () => {
@@ -149,7 +185,8 @@ const AIRecommendationPanel = () => {
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4; // Corresponds to xl:grid-cols-5 to show one full row
+  // CHANGED: Use the custom hook instead of a fixed number.
+  const itemsPerPage = useItemsPerPage();
 
   const totalPages = Math.ceil(recommendations.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -163,10 +200,16 @@ const AIRecommendationPanel = () => {
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
+  
+  // ADDED: Effect to prevent being on an out-of-bounds page after resize.
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages > 0 ? totalPages : 1);
+    }
+  }, [totalPages, currentPage]);
 
 
   return (
-    // REMOVED max-height and flex properties from this container
     <div className=" bottom-0 left-0 right-0 z-50 p-4 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg max-h-80">
       <div className="flex justify-between items-center mb-4 px-4">
         <h2 className="text-xl font-bold text-gray-100">AI Recommendations</h2>
@@ -192,7 +235,6 @@ const AIRecommendationPanel = () => {
           </div>
         )}
       </div>
-      {/* REMOVED overflow-y-auto, the content will now paginate */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-2">
         {currentRecommendations.map((rec) => (
           <RecommendationCard key={rec.id} {...rec} />
@@ -203,4 +245,3 @@ const AIRecommendationPanel = () => {
 };
 
 export default AIRecommendationPanel;
-

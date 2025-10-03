@@ -1,14 +1,10 @@
-
+import StationYardLayout from '@/components/stationyardlayout';
 
 export default function Home() {
   return (
-  
-
-    <div className="justify-center text-4xl font-bold text-center mt-20">
-      Welcome to RailSense!
-    </div>
- 
-      
-
+    <main className="p-4">
+      <h1 className="text-xl font-bold mb-4">Borivali Station Layout</h1>
+      <StationYardLayout />
+    </main>
   );
 }

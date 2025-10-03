@@ -39,6 +39,7 @@ export default function Navbar() {
           alt="RailSense Logo"
           width={150} // Slightly adjusted for better visual balance
           height={40}
+          className="transition duration-300 ease-in-out hover:-translate-y-1 hover:scale-110"
         />
       </div>
       
