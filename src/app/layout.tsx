@@ -29,7 +29,7 @@ export default function RootLayout({
             <Sidebar />
 
             {/* Middle Section's Column 2: Page Content */}
-            <main className="flex-grow p-8 overflow-y-auto">
+            <main className="flex-grow p-1 overflow-y-auto">
               {children}
             </main>
 

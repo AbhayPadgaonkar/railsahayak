@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Siren, GitPullRequestArrow, FileClock } from 'lucide-react';
+import { BotMessageSquare } from 'lucide-react';
 
 export default function Sidebar() {
   return (
@@ -41,6 +42,15 @@ export default function Sidebar() {
             >
               <FileClock className='w-5 h-5' />
               <span>Audit Logs</span>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              href="/auditlogs" 
+              className="flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-sky-600 hover:text-white"
+            >
+              <BotMessageSquare className='w-5 h-5'  />
+              <span>Chat Assistant</span>
             </Link>
           </li>
         </ul>
