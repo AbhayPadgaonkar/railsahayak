@@ -26,13 +26,13 @@ const LAYOUT_CONFIG: TrackSegment[] = [
   { id: 'upMain_1', d: 'M 0 150 L 100 150', connectedTo: ['upMain_2'] },
   { id: 'upMain_2', d: 'M 100 150 L 200 150', connectedTo: ['upMain_3'] },
   { id: 'upMain_3', d: 'M 200 150 L 300 150', connectedTo: ['upMain_Turnout1_Straight'] },
-  { id: 'upMain_4', d: 'M 400 150 L 800 150', connectedTo: ['upMain_Turnout1_Straight','upMain_Turnout2_Straight'] },
+  { id: 'upMain_4', d: 'M 400 150 L 800 150', connectedTo: ['upMain_Turnout2_Straight'] },
   { id: 'upMain_5', d: 'M 900 150 L 1000 150', connectedTo: ['upMain_6'] },
   { id: 'upMain_6', d: 'M 1000 150 L 1100 150', connectedTo: ['upMain_7'] },
   { id: 'upMain_7', d: 'M 1100 150 L 1200 150', connectedTo: [''] },
   // DN Main Line
-  { id: 'dnMain_5', d: 'M 0 250 L 100 250', connectedTo: [''] },
-  { id: 'dnMain_4', d: 'M 100 250 L 200 250', connectedTo: ['dnMain_5'] },
+  { id: 'dnMain_5', d: 'M 0 250 L 100 250', connectedTo: ['dnMain_4'] },
+  { id: 'dnMain_4', d: 'M 100 250 L 200 250', connectedTo: ['dnMain_3'] },
   { id: 'dnMain_3', d: 'M 400 250 L 800 250', connectedTo: ['dnMain_Turnout2_Straight'] },
   { id: 'dnMain_2', d: 'M 1000 250 L 1100 250', connectedTo: ['dnMain_Turnout1_Straight','up_down_2_Diverge'] },
   { id: 'dnMain_1', d: 'M 1100 250 L 1200 250', connectedTo: ['dnMain_2'] },
@@ -41,7 +41,7 @@ const LAYOUT_CONFIG: TrackSegment[] = [
   { id: 'sideLoop', d: 'M 500 330 L 700 330', connectedTo: ['dnTurnout_1_Diverge', 'dnTurnout_2_Diverge'], isLoop: true },
   // Turnouts
   { id: 'upMain_Turnout1_Straight', d: 'M 300 150 L 400 150', connectedTo: ['up_down_1_Diverge', 'upTurnout_1_Diverge','upMain_4'] },
-  { id: 'upTurnout_1_Diverge', d: 'M 400 150 L 500 70', connectedTo: ['commonLoop'] },
+  { id: 'upTurnout_1_Diverge', d: 'M 400 150 L 500 70', connectedTo: ['commonLoop','upMain_Turnout1_Straight'] },
   { id: 'upMain_Turnout2_Straight', d: 'M 800 150 L 900 150', connectedTo: ['upTurnout_2_Diverge','up_down_2_Diverge','upMain_5'] },
   { id: 'upTurnout_2_Diverge', d: 'M 700 70 L 800 150', connectedTo: ['commonLoop', 'upMain_Turnout2_Straight'] },
   { id: 'dnMain_Turnout2_Straight', d: 'M 200 250 L 400 250', connectedTo: ['dnMain_4'] },
@@ -132,7 +132,7 @@ const StationYardLayout = () => {
   };
 
   return (
-    <div className=" pt-1 rounded-xl  border bg-black  border-gray-900 w-full mx-auto">
+    <div className=" pt-1 rounded-xl  border bg-gray-950  border-gray-700 w-full mx-auto">
       
       
       <div className="flex justify-center items-center gap-8 mb-1">
@@ -146,7 +146,7 @@ const StationYardLayout = () => {
         </div>
       </div>
       
-      <svg viewBox="0 0 1200 379" className="w-full h-full bg-black rounded-md">
+      <svg viewBox="0 0 1200 379" className="w-full h-full rounded-md">
         <g>
           {/* Layer 1: Base Tracks (with unique IDs for animation) */}
           {LAYOUT_CONFIG.map(segment => (
