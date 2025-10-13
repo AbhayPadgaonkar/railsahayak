@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Train from './train'; // Import the new Train component
 
 
-type TrackStatus = 'free' | 'occupied';
+type TrackStatus = 'free' | 'occupied' | 'blocked';
 
 interface TrainState {
   id: string;
@@ -129,10 +129,11 @@ const StationYardLayout = () => {
   const colorMap: Record<TrackStatus, string> = {
     free: '#22c55e',
     occupied: '#ef4444',
+    blocked: '#D3D3D3',
   };
 
   return (
-    <div className=" pt-1 rounded-xl  border bg-gray-950  border-gray-700 w-full mx-auto">
+    <div className=" pt-1   border bg-gray-950  border-gray-700 w-full mx-auto">
       
       
       <div className="flex justify-center items-center gap-8 mb-1">
@@ -144,9 +145,13 @@ const StationYardLayout = () => {
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap.occupied }} />
           <span className=" text-gray-300">Track Occupied</span>
         </div>
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap.blocked }} />
+          <span className=" text-gray-300">Track Blocked</span>
+        </div>
       </div>
       
-      <svg viewBox="0 0 1200 379" className="w-full h-full rounded-md">
+      <svg viewBox="0 0 1200 408" className="w-full h-full rounded-md">
         <g>
           {/* Layer 1: Base Tracks (with unique IDs for animation) */}
           {LAYOUT_CONFIG.map(segment => (
