@@ -11,13 +11,9 @@ export default function Sidebar() {
     // Main container: Dark theme, fixed width, full height, and subtle right border for separation.
     <aside className="bg-gray-800 text-gray-300 w-85 h-full pt-4 flex flex-col flex-shrink-0 border-r border-gray-700">
       
-      {/* Sidebar Header */}
-      <div className="mb-8 px-2">
-        <h2 className="text-2xl font-bold text-white tracking-tight">Menu</h2>
-      </div>
       
       {/* Navigation Links */}
-      <nav>
+      <nav className='pl-5'>
         {/* Using space-y-2 for consistent vertical spacing between links */}
         <ul className="space-y-2">
                 <li>
@@ -58,16 +54,16 @@ export default function Sidebar() {
           </li>
            <li>
             <Link 
-              href="/whatifsimulations" 
+              href="/kpiboard" 
               className="flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-sky-600 hover:text-white"
             >
               <ChartColumn  className='w-5 h-5' />
-              <span>KPI Metrics</span>
+              <span>KPI Dashboard</span>
             </Link>
           </li>
           <li>
             <Link 
-              href="/auditlogs" 
+              href="" 
               className="flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 hover:bg-sky-600 hover:text-white"
             >
               <BotMessageSquare className='w-5 h-5'  />

@@ -63,8 +63,8 @@ const StationYardLayout = () => {
   // Initialize simulation
   useEffect(() => {
     setTrains([
-      { id: 'T12926', currentSegmentId: 'upMain_1', progress: 0, speed: 50 },
-      { id: 'T90302', currentSegmentId: 'dnMain_3', progress: 0, speed: 50 },
+      { id: 'T12926', currentSegmentId: 'upMain_1', progress: 0, speed: 30 },
+      { id: 'T90302', currentSegmentId: 'dnMain_3', progress: 0, speed: 30 },
     ]);
     lastUpdateTimeRef.current = performance.now();
   }, []);
