@@ -18,27 +18,39 @@ interface TrackSegment {
   id: string;
   d: string;
   connectedTo: string[];
-  isLoop?: boolean;
+  isBlock?: boolean;
 }
+
+interface Signal{
+  id: string;
+  d: string;
+  state: 'red' | 'green' | 'yellow';
+  connectedTo: string[];
+}
+
+const SIGNAL_CONFIG: Signal[] = [
+  // Signals can be defined here if needed in future
+  { id: 'signal_1', d: 'M 50 140 L 50 120', state: 'green', connectedTo: ['upMain_1'] },
+];
 
 const LAYOUT_CONFIG: TrackSegment[] = [
   // UP Main Line
-  { id: 'upMain_1', d: 'M 0 150 L 100 150', connectedTo: ['upMain_2'] },
+  { id: 'upMain_1', d: 'M 0 150 L 100 150', connectedTo: ['upMain_2'] , isBlock: true},
   { id: 'upMain_2', d: 'M 100 150 L 200 150', connectedTo: ['upMain_3'] },
   { id: 'upMain_3', d: 'M 200 150 L 300 150', connectedTo: ['upMain_Turnout1_Straight'] },
   { id: 'upMain_4', d: 'M 400 150 L 800 150', connectedTo: ['upMain_Turnout2_Straight'] },
   { id: 'upMain_5', d: 'M 900 150 L 1000 150', connectedTo: ['upMain_6'] },
   { id: 'upMain_6', d: 'M 1000 150 L 1100 150', connectedTo: ['upMain_7'] },
-  { id: 'upMain_7', d: 'M 1100 150 L 1200 150', connectedTo: [''] },
+  { id: 'upMain_7', d: 'M 1100 150 L 1200 150', connectedTo: [''], isBlock: true },
   // DN Main Line
-  { id: 'dnMain_5', d: 'M 0 250 L 100 250', connectedTo: ['dnMain_4'] },
+  { id: 'dnMain_5', d: 'M 0 250 L 100 250', connectedTo: ['dnMain_4'], isBlock: true },
   { id: 'dnMain_4', d: 'M 100 250 L 200 250', connectedTo: ['dnMain_3'] },
   { id: 'dnMain_3', d: 'M 400 250 L 800 250', connectedTo: ['dnMain_Turnout2_Straight'] },
   { id: 'dnMain_2', d: 'M 1000 250 L 1100 250', connectedTo: ['dnMain_Turnout1_Straight','up_down_2_Diverge'] },
-  { id: 'dnMain_1', d: 'M 1100 250 L 1200 250', connectedTo: ['dnMain_2'] },
+  { id: 'dnMain_1', d: 'M 1100 250 L 1200 250', connectedTo: ['dnMain_2'], isBlock: true },
   // Loops
-  { id: 'commonLoop', d: 'M 500 70 L 700 70', connectedTo: ['upTurnout_1_Diverge', 'upTurnout_2_Diverge'], isLoop: true },
-  { id: 'sideLoop', d: 'M 500 330 L 700 330', connectedTo: ['dnTurnout_1_Diverge', 'dnTurnout_2_Diverge'], isLoop: true },
+  { id: 'commonLoop', d: 'M 500 70 L 700 70', connectedTo: ['upTurnout_1_Diverge', 'upTurnout_2_Diverge']},
+  { id: 'sideLoop', d: 'M 500 330 L 700 330', connectedTo: ['dnTurnout_1_Diverge', 'dnTurnout_2_Diverge']},
   // Turnouts
   { id: 'upMain_Turnout1_Straight', d: 'M 300 150 L 400 150', connectedTo: ['up_down_1_Diverge', 'upTurnout_1_Diverge','upMain_4'] },
   { id: 'upTurnout_1_Diverge', d: 'M 400 150 L 500 70', connectedTo: ['commonLoop','upMain_Turnout1_Straight'] },
@@ -150,6 +162,55 @@ const StationYardLayout = () => {
           <span className=" text-gray-300">Track Blocked</span>
         </div>
       </div>
+
+      <svg width="200" height="200" >
+  {SIGNAL_CONFIG.map((signal) => {
+    const { id, state } = signal;
+    const x = 50;
+    const y = 120;
+    return (
+      <g key={id} transform={`translate(${x}, ${y})`}>
+        {/* Outer signal body */}
+        <rect x={-6} y={-22} width={12} height={36} rx={3} fill="#222" stroke="#555" strokeWidth="0.5" />
+
+        {/* Red light */}
+        <circle
+          cx={0}
+          cy={-14}
+          r={3.5}
+          fill={state === 'red' ? 'red' : '#330000'}
+        />
+        {/* Yellow light */}
+        <circle
+          cx={0}
+          cy={-2}
+          r={3.5}
+          fill={state === 'yellow' ? 'yellow' : '#332200'}
+        />
+        {/* Green light */}
+        <circle
+          cx={0}
+          cy={10}
+          r={3.5}
+          fill={state === 'green' ? 'limegreen' : '#002200'}
+        />
+
+        {/* Label (optional) */}
+        <text
+          x={0}
+          y={20}
+          textAnchor="middle"
+          fontSize="5"
+          fill="#666"
+          fontFamily="sans-serif"
+        >
+          {id.replace('signal_', 'S')}
+        </text>
+      </g>
+    );
+  })}
+</svg>
+
       
       <svg viewBox="0 0 1200 408" className="w-full h-full rounded-md">
         <g>
@@ -161,7 +222,7 @@ const StationYardLayout = () => {
               d={segment.d}
               stroke={trackStatus[segment.id] === 'free' ? '#22c55e' : colorMap[trackStatus[segment.id]]}
               strokeWidth={6}
-              strokeDasharray={segment.isLoop ? "8 4" : "none"}
+              strokeDasharray={segment.isBlock ? "8 4" : "none"}
               fill="none"
               style={{ transition: 'stroke 0.5s ease' }}
             />
@@ -178,8 +239,8 @@ const StationYardLayout = () => {
           ))}
 
           {/* Labels */}
-          <text x="50" y="140" className="text-sm font-sans font-semibold fill-gray-400">UP MAIN</text>
-          <text x="50" y="265" className="text-sm font-sans font-semibold fill-gray-400">DN MAIN</text>
+          <text x="10" y="140" className="text-xs font-sans font-semibold fill-gray-100">UP MAIN</text>
+          <text x="10" y="270" className="text-xs font-sans font-semibold fill-gray-100">DN MAIN</text>
         </g>
       </svg>
     </div>
