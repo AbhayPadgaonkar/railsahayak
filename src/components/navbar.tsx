@@ -6,19 +6,21 @@ import { Clock } from 'lucide-react'; // Import a clock icon
 
 export default function Navbar() {
   // 1. State for the current time (no changes here)
-  const [currentTime, setCurrentTime] = useState(new Date());
+const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
-  // 2. useEffect to update the time every second (no changes here)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+useEffect(() => {
+  // 2. Set the *actual* time only on the client.
+  setCurrentTime(new Date());
 
-    // 3. Cleanup function (no changes here)
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
+  // 3. Your interval logic is perfect and updates the time.
+  const timer = setInterval(() => {
+    setCurrentTime(new Date());
+  }, 1000);
+
+  return () => {
+    clearInterval(timer);
+  };
+}, []); // Empty array ensures this runs only on the client, after mount.
 
   // Formatting options for the time (no changes here)
   const timeFormatOptions: Intl.DateTimeFormatOptions = {
@@ -63,7 +65,7 @@ export default function Navbar() {
       <div className="flex items-center gap-2 text-slate-200">
         <Clock className="h-4 w-4 text-sky-400" />
         <div className="font-mono text-base tracking-wider">
-          {currentTime.toLocaleTimeString('en-GB', timeFormatOptions)}
+          {currentTime ? currentTime.toLocaleString('en-GB', timeFormatOptions) : null}
         </div>
       </div>
 
