@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {/* 1. Main container: Full-screen, vertical flex column */}
-        <div className="flex flex-col h-screen bg-gray-900 text-white">
+        <div className="flex flex-col h-screen bg-gray-900 text-white ">
 
           {/* ROW 1: Navbar (takes its own height) */}
           <Navbar />

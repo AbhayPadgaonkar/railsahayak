@@ -33,7 +33,7 @@ const RecommendationCard = ({
 
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 transition-all duration-200 hover:shadow-2xl hover:border-gray-600 flex flex-col min-h-60">
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex justify-between items-start ">
         <h3 className="font-semibold text-white">{title}</h3>
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${priorityColorClass}`}>
           {priority}
@@ -210,8 +210,8 @@ const AIRecommendationPanel = () => {
 
 
   return (
-    <div className=" bottom-0 left-0 right-0 z-50 p-4 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg max-h-80">
-      <div className="flex justify-between items-center mb-4 px-4">
+    <div className=" bottom-0 left-0 right-0 z-50 p-4 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg max-h-94">
+      <div className="flex justify-between items-center mb-4 px-6 py-2">
         <h2 className="text-xl font-bold text-gray-100">AI Recommendations</h2>
         {totalPages > 1 && (
           <div className="flex items-center gap-3">
@@ -235,7 +235,7 @@ const AIRecommendationPanel = () => {
           </div>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 pb-2 h-10/12 ">
         {currentRecommendations.map((rec) => (
           <RecommendationCard key={rec.id} {...rec} />
         ))}

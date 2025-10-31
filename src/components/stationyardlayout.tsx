@@ -79,7 +79,7 @@ const LAYOUT_CONFIG: TrackSegment[] = [
   { id: 'dnMain_2', d: 'M 1000 250 L 1100 250', connectedTo: ['dnMain_Turnout1_Straight','up_down_2_Diverge'] },
   { id: 'dnMain_1', d: 'M 1100 250 L 1200 250', connectedTo: ['dnMain_2'], isBlock: true },
   // Loops
-  { id: 'commonLoop', d: 'M 500 70 L 700 70', connectedTo: ['upTurnout_1_Diverge', 'upTurnout_2_Diverge']},
+  { id: 'commonLoop', d: 'M 500 70 L 700 70', connectedTo: ['upTurnout_1_Diverge', 'upTurnout_2_Diverge']}, //Common loop can handle both up and down
   { id: 'sideLoop', d: 'M 500 330 L 700 330', connectedTo: ['dnTurnout_1_Diverge', 'dnTurnout_2_Diverge']},
   // Turnouts
   { id: 'upMain_Turnout1_Straight', d: 'M 300 150 L 400 150', connectedTo: ['up_down_1_Diverge', 'upTurnout_1_Diverge','upMain_4'] },
@@ -175,7 +175,7 @@ const StationYardLayout = () => {
   };
 
   return (
-    <div className=" pt-1   border bg-gray-950  border-gray-700 w-full mx-auto">
+    <div className=" pt-1   border bg-gray-950  border-gray-700 w-full h-12/12 mx-auto">
       
       
       <div className="flex justify-start pl-2.5 items-start gap-8 mb-1">
