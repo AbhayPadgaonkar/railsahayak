@@ -1,5 +1,10 @@
-import AiRecommendationPanel from './aipanel';
-import CommunicationGateway from './communication';
+"use client"
+import AiRecommendationPanel from "./aipanel";
+import dynamic from "next/dynamic";
+
+const CommunicationGateway = dynamic(() => import("@/components/communication"), {
+  ssr: false, // 🚀 client-only
+});
 
 export default function BottomPanel() {
   return (
