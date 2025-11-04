@@ -35,7 +35,7 @@ const RecommendationCard = ({
   return (
     <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 hover:shadow-xl hover:border-gray-600 transition-all duration-200 flex flex-col justify-between">
       <div>
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex justify-between items-start mb-10">
           <h3 className="text-lg font-semibold text-white">{title}</h3>
           <span
             className={`text-xs font-bold px-2 py-0.5 rounded-full ${priorityColorClass}`}
@@ -46,10 +46,10 @@ const RecommendationCard = ({
         <p className="text-sm text-gray-400">
           <strong className="text-gray-300">Location:</strong> {location}
         </p>
-        <p className="text-sm text-gray-400 mb-3">
+        <p className="text-sm text-gray-400 mb-8">
           <strong className="text-gray-300">Duration:</strong> {duration}
         </p>
-        <p className="text-sm text-gray-500 italic mb-4">{description}</p>
+        <p className="text-sm text-gray-500 italic mb-8">{description}</p>
       </div>
 
       <div className="flex gap-2">
@@ -192,7 +192,7 @@ const AIRecommendationPanel = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2 pb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2 ">
         {currentRecommendations.map((rec) => (
           <RecommendationCard
             key={rec.id}
