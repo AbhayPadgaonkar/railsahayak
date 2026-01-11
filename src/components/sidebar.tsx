@@ -13,7 +13,7 @@ export default function Sidebar() {
   const pathname = usePathname(); // ✅ get current route
 
   return (
-    <aside className="bg-gray-800 text-gray-300 w-85 h-full pt-4 flex flex-col flex-shrink-0 border-r border-gray-700">
+    <aside className="bg-gray-800 text-gray-300 w-65 h-full pt-4 flex flex-col flex-shrink-0 border-r border-gray-700">
       {/* Navigation Links */}
       <nav className="pl-5 pr-5">
         <ul className="space-y-2">

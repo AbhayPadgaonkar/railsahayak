@@ -7,6 +7,7 @@ from backend.rules.tracks import check_block_entry, check_fouling
 from backend.rules.speed import determine_speed_limit
 from backend.rules.emergency import emergency_mode_decision
 from backend.api.sensors_api import router as sensor_router
+from backend.domain.trains import TrainType, build_train_profile
 
 
 
@@ -21,12 +22,17 @@ app.include_router(sensor_router)
 
 # Data Models (Request / Response)
 
+class Gradient(BaseModel):
+    value: int           
+    direction: str       
+
 class TrainRequest(BaseModel):
     train_id: str
+    train_type: str
     block_id: str
     signal_state: str
     sectional_speed: int
-    gradient: Optional[float] = 0.0
+    gradient: Optional[Gradient] = None
     condition: Optional[str] = None
     has_written_authority: bool = False
 
@@ -53,6 +59,8 @@ class DecisionResponse(BaseModel):
 # Core Decision Endpoint
 
 @app.post("/decision", response_model=List[DecisionResponse])
+
+
 def make_decision(payload: SectionDecisionRequest):
 
     results = []
@@ -132,6 +140,12 @@ def make_decision(payload: SectionDecisionRequest):
             continue
 
         reasons.append(fouling_result["reason"])
+
+        profile = build_train_profile(
+            train_id=train.train_id,
+            train_type=TrainType[train.train_type],
+            max_speed=train.sectional_speed,
+        )
 
         speed_result = determine_speed_limit(
             sectional_speed=train.sectional_speed,
