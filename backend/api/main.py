@@ -6,25 +6,28 @@ from backend.rules.signals import check_signal_permission
 from backend.rules.tracks import check_block_entry, check_fouling
 from backend.rules.speed import determine_speed_limit
 from backend.rules.emergency import emergency_mode_decision
+
 from backend.api.sensors_api import router as sensor_router
 from backend.domain.trains import TrainType, build_train_profile
-
-
+from backend.ml.delay_predictor import DelayPredictor
+from backend.ml.feature_builder import build_delay_features
 
 
 app = FastAPI(
     title="RailSahayak Decision API",
     description="G&SR-compliant railway decision support system",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 app.include_router(sensor_router)
 
-# Data Models (Request / Response)
+delay_predictor = DelayPredictor()
+
 
 class Gradient(BaseModel):
-    value: int           
-    direction: str       
+    value: int
+    direction: str
+
 
 class TrainRequest(BaseModel):
     train_id: str
@@ -56,13 +59,8 @@ class DecisionResponse(BaseModel):
     reasons: List[str]
 
 
-# Core Decision Endpoint
-
 @app.post("/decision", response_model=List[DecisionResponse])
-
-
 def make_decision(payload: SectionDecisionRequest):
-
     results = []
 
     emergency = emergency_mode_decision(payload.context.disaster_active)
@@ -87,7 +85,6 @@ def make_decision(payload: SectionDecisionRequest):
             signal_state=train.signal_state,
             has_written_authority=train.has_written_authority,
         )
-
         if not signal_result["can_proceed"]:
             results.append(
                 DecisionResponse(
@@ -99,7 +96,6 @@ def make_decision(payload: SectionDecisionRequest):
                 )
             )
             continue
-
         reasons.append(signal_result["reason"])
 
         block_result = check_block_entry(
@@ -107,7 +103,6 @@ def make_decision(payload: SectionDecisionRequest):
             block_id=train.block_id,
             occupied_blocks=payload.context.occupied_blocks,
         )
-
         if not block_result["can_enter"]:
             results.append(
                 DecisionResponse(
@@ -119,14 +114,12 @@ def make_decision(payload: SectionDecisionRequest):
                 )
             )
             continue
-
         reasons.append(block_result["reason"])
 
         fouling_result = check_fouling(
             track_segment=train.block_id,
             fouling_segments=payload.context.fouling_segments,
         )
-
         if not fouling_result["safe"]:
             results.append(
                 DecisionResponse(
@@ -138,7 +131,6 @@ def make_decision(payload: SectionDecisionRequest):
                 )
             )
             continue
-
         reasons.append(fouling_result["reason"])
 
         profile = build_train_profile(
@@ -147,12 +139,18 @@ def make_decision(payload: SectionDecisionRequest):
             max_speed=train.sectional_speed,
         )
 
+        features = build_delay_features(
+            profile=profile,
+            gradient=train.gradient,
+            condition=train.condition,
+        )
+        _predicted_delay = delay_predictor.predict(features)
+
         speed_result = determine_speed_limit(
             sectional_speed=train.sectional_speed,
             condition=train.condition,
             gradient=train.gradient,
         )
-
         reasons.append(speed_result["reason"])
 
         allowed_actions = ["PROCEED", "HOLD", "MAINTAIN_SPEED", "DIVERT"]
@@ -171,8 +169,6 @@ def make_decision(payload: SectionDecisionRequest):
 
     return results
 
-
-# Health Check
 
 @app.get("/health")
 def health_check():
