@@ -88,7 +88,10 @@ def make_decision(payload: SectionDecisionRequest):
                     reasons=[emergency["reason"]],
                 )
             )
-        return results
+        return SectionDecisionResponse(
+            decisions=results,
+            optimized_order=None,
+        )
 
     for train in payload.trains:
         reasons = []
@@ -157,7 +160,7 @@ def make_decision(payload: SectionDecisionRequest):
             gradient=train.gradient,
             condition=train.condition,
         )
-        _predicted_delay = delay_predictor.predict(features)
+        predicted_delay = delay_predictor.predict(features)
 
         speed_result = determine_speed_limit(
             sectional_speed=train.sectional_speed,
@@ -174,7 +177,7 @@ def make_decision(payload: SectionDecisionRequest):
             {
                 "train_id": train.train_id,
                 "priority": profile.priority,
-                "predicted_delay": _predicted_delay,
+                "predicted_delay": predicted_delay,
                 "block_id": train.block_id,
                 "train_type": train.train_type,
                 "gradient": train.gradient.dict() if train.gradient else None,
@@ -191,20 +194,33 @@ def make_decision(payload: SectionDecisionRequest):
             )
         )
 
-    optimized_order = None
+    optimized_order = []
 
-    if len(optimizer_input) > 1:
-        optimized = optimize_train_order(optimizer_input)
-        if optimized:
-            optimized_order = [
-                OptimizedOrder(train_id=t["train_id"], order=i)
-                for i, t in enumerate(optimized)
-            ]
+    block_groups = {}
+    for item in optimizer_input:
+        block_groups.setdefault(item["block_id"], []).append(item)
+
+    for trains_in_block in block_groups.values():
+        if len(trains_in_block) > 1:
+            optimized = optimize_train_order(trains_in_block)
+            if optimized:
+                optimized_order.extend(
+                    OptimizedOrder(train_id=t["train_id"], order=i)
+                    for i, t in enumerate(optimized)
+                )
+        else:
+            optimized_order.append(
+                OptimizedOrder(
+                    train_id=trains_in_block[0]["train_id"],
+                    order=0,
+                )
+            )
 
     return SectionDecisionResponse(
         decisions=results,
-        optimized_order=optimized_order,
+        optimized_order=optimized_order or None,
     )
+
 
 
 
