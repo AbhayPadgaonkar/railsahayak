@@ -11,6 +11,8 @@ from backend.api.sensors_api import router as sensor_router
 from backend.domain.trains import TrainType, build_train_profile
 from backend.ml.delay_predictor import DelayPredictor
 from backend.ml.feature_builder import build_delay_features
+from backend.optimizer.section_optimizer import optimize_train_order
+
 
 
 app = FastAPI(
@@ -58,9 +60,20 @@ class DecisionResponse(BaseModel):
     max_speed: Optional[int]
     reasons: List[str]
 
+class OptimizedOrder(BaseModel):
+    train_id: str
+    order: int
 
-@app.post("/decision", response_model=List[DecisionResponse])
+
+class SectionDecisionResponse(BaseModel):
+    decisions: List[DecisionResponse]
+    optimized_order: Optional[List[OptimizedOrder]] = None
+
+
+
+@app.post("/decision", response_model=SectionDecisionResponse)
 def make_decision(payload: SectionDecisionRequest):
+    optimizer_input = []
     results = []
 
     emergency = emergency_mode_decision(payload.context.disaster_active)
@@ -157,6 +170,17 @@ def make_decision(payload: SectionDecisionRequest):
         if speed_result["max_speed"] <= 30:
             allowed_actions.remove("PROCEED")
 
+        optimizer_input.append(
+            {
+                "train_id": train.train_id,
+                "priority": profile.priority,
+                "predicted_delay": _predicted_delay,
+                "block_id": train.block_id,
+                "train_type": train.train_type,
+                "gradient": train.gradient.dict() if train.gradient else None,
+            }
+        )
+
         results.append(
             DecisionResponse(
                 train_id=train.train_id,
@@ -167,7 +191,21 @@ def make_decision(payload: SectionDecisionRequest):
             )
         )
 
-    return results
+    optimized_order = None
+
+    if len(optimizer_input) > 1:
+        optimized = optimize_train_order(optimizer_input)
+        if optimized:
+            optimized_order = [
+                OptimizedOrder(train_id=t["train_id"], order=i)
+                for i, t in enumerate(optimized)
+            ]
+
+    return SectionDecisionResponse(
+        decisions=results,
+        optimized_order=optimized_order,
+    )
+
 
 
 @app.get("/health")

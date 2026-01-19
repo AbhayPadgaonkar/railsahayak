@@ -55,18 +55,19 @@ def optimize_train_order(trains):
     objective_terms = []
 
     for train in trains:
-        base_weight = 10 - train["priority"]
+        priority_weight = 20 - (train["priority"] * 2)
         delay = train["predicted_delay"]
 
-        goods_penalty = 5 if train["train_type"] == "GOODS" else 0
+        goods_penalty = 3 if train["train_type"] == "GOODS" else 0
 
         objective_terms.append(
-            (base_weight + goods_penalty)
+            (priority_weight + goods_penalty)
             * delay
-            * order[train["train_id"]]
+            * (n - order[train["train_id"]])
         )
 
     model.Minimize(sum(objective_terms))
+
 
     # SOLVE
     solver = cp_model.CpSolver()
