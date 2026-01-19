@@ -3,14 +3,12 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from backend.rules.signals import check_signal_permission
-from backend.rules.tracks import check_block_entry, check_fouling
+from backend.rules.tracks import check_line_entry, check_fouling
 from backend.rules.speed import determine_speed_limit
 from backend.rules.emergency import emergency_mode_decision
 
 from backend.api.sensors_api import router as sensor_router
 from backend.domain.trains import TrainType, build_train_profile
-from backend.ml.delay_predictor import DelayPredictor
-from backend.ml.feature_builder import build_delay_features
 from backend.optimizer.section_optimizer import optimize_train_order
 
 
@@ -35,15 +33,22 @@ class TrainRequest(BaseModel):
     train_id: str
     train_type: str
     block_id: str
+    line_id: str
     signal_state: str
     sectional_speed: int
+
+    scheduled_time: int        # minutes since midnight
+    current_time: int          # minutes since midnight
+
     gradient: Optional[Gradient] = None
     condition: Optional[str] = None
     has_written_authority: bool = False
 
 
+
+
 class SystemContext(BaseModel):
-    occupied_blocks: List[str]
+    occupied_lines: List[str]     
     fouling_segments: List[str]
     disaster_active: bool = False
 
@@ -75,6 +80,9 @@ class SectionDecisionResponse(BaseModel):
 def make_decision(payload: SectionDecisionRequest):
     optimizer_input = []
     results = []
+    
+    def compute_current_delay(train: TrainRequest) -> int:
+        return max(0, train.current_time - train.scheduled_time)
 
     emergency = emergency_mode_decision(payload.context.disaster_active)
     if not emergency["optimization_allowed"]:
@@ -114,23 +122,24 @@ def make_decision(payload: SectionDecisionRequest):
             continue
         reasons.append(signal_result["reason"])
 
-        block_result = check_block_entry(
-            train_id=train.train_id,
-            block_id=train.block_id,
-            occupied_blocks=payload.context.occupied_blocks,
-        )
-        if not block_result["can_enter"]:
+        line_result = check_line_entry(
+        train_id=train.train_id,
+        line_id=train.line_id,
+        occupied_lines=payload.context.occupied_lines,
+    )
+
+        if not line_result["can_enter"]:
             results.append(
                 DecisionResponse(
                     train_id=train.train_id,
                     allow_movement=False,
                     allowed_actions=["HOLD"],
                     max_speed=None,
-                    reasons=[block_result["reason"]],
+                    reasons=[line_result["reason"]],
                 )
             )
             continue
-        reasons.append(block_result["reason"])
+        reasons.append(line_result["reason"])
 
         fouling_result = check_fouling(
             track_segment=train.block_id,
@@ -155,12 +164,8 @@ def make_decision(payload: SectionDecisionRequest):
             max_speed=train.sectional_speed,
         )
 
-        features = build_delay_features(
-            profile=profile,
-            gradient=train.gradient,
-            condition=train.condition,
-        )
-        predicted_delay = delay_predictor.predict(features)
+        current_delay = compute_current_delay(train)
+
 
         speed_result = determine_speed_limit(
             sectional_speed=train.sectional_speed,
@@ -177,12 +182,15 @@ def make_decision(payload: SectionDecisionRequest):
             {
                 "train_id": train.train_id,
                 "priority": profile.priority,
-                "predicted_delay": predicted_delay,
+                "current_delay": current_delay,
                 "block_id": train.block_id,
+                "line_id": train.line_id,
                 "train_type": train.train_type,
                 "gradient": train.gradient.dict() if train.gradient else None,
             }
         )
+
+
 
         results.append(
             DecisionResponse(
@@ -201,25 +209,29 @@ def make_decision(payload: SectionDecisionRequest):
         block_groups.setdefault(item["block_id"], []).append(item)
 
     for trains_in_block in block_groups.values():
-        if len(trains_in_block) > 1:
-            optimized = optimize_train_order(trains_in_block)
+
+        # Group further by line
+        line_groups = {}
+        for t in trains_in_block:
+            line_groups.setdefault(t["line_id"], []).append(t)
+
+        for trains_in_line in line_groups.values():
+
+            # 🔒 GUARD: optimize ONLY if real contention exists
+            if len(trains_in_line) <= 1:
+                continue
+
+            optimized = optimize_train_order(trains_in_line)
             if optimized:
                 optimized_order.extend(
                     OptimizedOrder(train_id=t["train_id"], order=i)
                     for i, t in enumerate(optimized)
                 )
-        else:
-            optimized_order.append(
-                OptimizedOrder(
-                    train_id=trains_in_block[0]["train_id"],
-                    order=0,
-                )
-            )
-
     return SectionDecisionResponse(
         decisions=results,
-        optimized_order=optimized_order or None,
+        optimized_order=optimized_order if optimized_order else None
     )
+
 
 
 

@@ -3,80 +3,85 @@ from ortools.sat.python import cp_model
 
 def optimize_train_order(trains):
     """
+    Indian Railways compliant optimizer
+
     trains = list of dicts:
     {
         train_id,
-        priority,
+        priority,             # 1 = highest
         predicted_delay,
         block_id,
-        train_type,          # "GOODS", "RAJDHANI", etc
-        gradient             # { "value": int, "direction": "UP" | "DOWN" } or None
+        line_id,
+        train_type,           # GOODS / RAJDHANI / etc
+        gradient              # { value, direction } or None
     }
     """
 
     model = cp_model.CpModel()
     n = len(trains)
 
-    # Order variable for each train
     order = {
-        train["train_id"]: model.NewIntVar(
-            0, n - 1, f'order_{train["train_id"]}'
-        )
-        for train in trains
+        t["train_id"]: model.NewIntVar(0, n - 1, f'order_{t["train_id"]}')
+        for t in trains
     }
 
-    # Each train gets a unique order
     model.AddAllDifferent(order.values())
 
-    # BLOCK CONTENTION CONSTRAINT
+    # --- HARD CONSTRAINT 1: Same block + same line contention ---
     for i in range(n):
         for j in range(i + 1, n):
             t1 = trains[i]
             t2 = trains[j]
 
-            if t1["block_id"] == t2["block_id"]:
-                model.Add(
-                    order[t1["train_id"]] != order[t2["train_id"]]
-                )
-
-    # GRADIENT PROTECTION (GOODS ON STEEP UP GRADIENT)
-    for train in trains:
-        if train["train_type"] == "GOODS":
-            gradient = train.get("gradient")
             if (
-                gradient
-                and gradient["direction"] == "UP"
-                and gradient["value"] <= 200
+                t1["block_id"] == t2["block_id"]
+                and t1["line_id"] == t2["line_id"]
             ):
-                # Goods train should be scheduled early
-                model.Add(order[train["train_id"]] <= 1)
+                model.Add(order[t1["train_id"]] != order[t2["train_id"]])
 
-    # OBJECTIVE: MINIMIZE WEIGHTED DELAY
-    objective_terms = []
+    # --- HARD CONSTRAINT 2: Priority dominance (IR rule) ---
+    # Applies unless overridden by gradient exception (IR practice)
+    def has_steep_up_gradient(train):
+        g = train.get("gradient")
+        return g and g["direction"] == "UP" and g["value"] <= 200
+    
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                continue
 
-    for train in trains:
-        priority_weight = 20 - (train["priority"] * 2)
-        delay = train["predicted_delay"]
+            t1 = trains[i]
+            t2 = trains[j]
 
-        goods_penalty = 3 if train["train_type"] == "GOODS" else 0
+            if (
+                t1["block_id"] == t2["block_id"]
+                and t1["line_id"] == t2["line_id"]
+                and t1["priority"] < t2["priority"]
+                and not has_steep_up_gradient(t2)
+            ):
+                model.Add(order[t1["train_id"]] < order[t2["train_id"]])
 
-        objective_terms.append(
-            (priority_weight + goods_penalty)
-            * delay
-            * (n - order[train["train_id"]])
+    # --- EXCEPTION: Goods-first on steep UP gradient (Appendix D / Ghat practice) ---
+    for t in trains:
+        if t["train_type"] == "GOODS":
+            g = t.get("gradient")
+            if g and g["direction"] == "UP" and g["value"] <= 200:
+                model.Add(order[t["train_id"]] == 0)
+
+    # --- OBJECTIVE: Minimize total delay AFTER precedence ---
+    model.Minimize(
+        sum(
+            t["current_delay"] * order[t["train_id"]]
+            for t in trains
         )
+    )
 
-    model.Minimize(sum(objective_terms))
-
-
-    # SOLVE
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
 
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         return None
 
-    # Return trains ordered by optimized sequence
     return sorted(
         trains,
         key=lambda t: solver.Value(order[t["train_id"]])
