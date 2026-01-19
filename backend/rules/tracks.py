@@ -1,21 +1,22 @@
 # backend/rules/tracks.py
 
-def check_block_entry(train_id, block_id, occupied_blocks):
+def check_line_entry(train_id, line_id, occupied_lines):
     """
     G&SR Absolute Block System:
     - Only one train in a block section at a time
     """
-
-    if block_id in occupied_blocks:
+    
+    if line_id in occupied_lines:
         return {
             "can_enter": False,
-            "reason": f"Block {block_id} already occupied"
+            "reason": f"Line {line_id} already occupied"
         }
 
     return {
         "can_enter": True,
-        "reason": "Block clear"
+        "reason": "Line clear"
     }
+
 
 
 def check_fouling(track_segment, fouling_segments):
