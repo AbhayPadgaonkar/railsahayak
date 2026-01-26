@@ -1,26 +1,25 @@
 {
-  "section_id": "SECTION_A",
+  "section_id": "SECTION_C",
   "blocks": [
     {
-      "block_id": "A_B",
+      "block_id": "E_F",
       "lines": [
         { "line_id": "UP_MAIN", "turnouts": [] },
-        { "line_id": "UP_LOOP", "turnouts": ["T1"] },
         { "line_id": "DN_MAIN", "turnouts": [] }
       ],
-      "next_blocks": ["B_C"]
+      "next_blocks": ["F_G"]
     },
     {
-      "block_id": "B_C",
+      "block_id": "F_G",
       "lines": [
-        { "line_id": "UP_MAIN", "turnouts": [] },
-        { "line_id": "UP_LOOP", "turnouts": ["T2"] },
+        { "line_id": "UP_MAIN", "turnouts": ["T5"] },
+        { "line_id": "UP_LOOP", "turnouts": ["T5", "T6"] },
         { "line_id": "DN_MAIN", "turnouts": [] }
       ],
-      "next_blocks": ["C_D"]
+      "next_blocks": ["G_H"]
     },
     {
-      "block_id": "C_D",
+      "block_id": "G_H",
       "lines": [
         { "line_id": "UP_MAIN", "turnouts": [] },
         { "line_id": "DN_MAIN", "turnouts": [] }

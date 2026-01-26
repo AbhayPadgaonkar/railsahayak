@@ -32,15 +32,21 @@ class Gradient(BaseModel):
 class TrainRequest(BaseModel):
     train_id: str
     train_type: str
+
     block_id: str
     line_id: str
+    next_block_id: Optional[str] = None
+
     signal_state: str
     sectional_speed: int
+
     scheduled_time: int
     current_time: int
+
     gradient: Optional[Gradient] = None
     condition: Optional[str] = None
     has_written_authority: bool = False
+
 
 
 class SystemContext(BaseModel):
@@ -215,6 +221,20 @@ def make_decision(payload: SectionDecisionRequest):
                 reasons=reasons,
             )
         )
+
+        if (
+            "PROCEED" in allowed_actions
+            and train.next_block_id
+        ):
+            current_key = f"{train.block_id}|{train.line_id}"
+            next_key = f"{train.next_block_id}|{train.line_id}"
+
+            if current_key in payload.context.occupied_lines:
+                payload.context.occupied_lines.remove(current_key)
+
+            if next_key not in payload.context.occupied_lines:
+                payload.context.occupied_lines.append(next_key)
+
 
     optimized_order = []
 

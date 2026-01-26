@@ -1,26 +1,25 @@
 {
-  "section_id": "SECTION_A",
+  "section_id": "SECTION_B",
   "blocks": [
     {
-      "block_id": "A_B",
-      "lines": [
-        { "line_id": "UP_MAIN", "turnouts": [] },
-        { "line_id": "UP_LOOP", "turnouts": ["T1"] },
-        { "line_id": "DN_MAIN", "turnouts": [] }
-      ],
-      "next_blocks": ["B_C"]
-    },
-    {
-      "block_id": "B_C",
-      "lines": [
-        { "line_id": "UP_MAIN", "turnouts": [] },
-        { "line_id": "UP_LOOP", "turnouts": ["T2"] },
-        { "line_id": "DN_MAIN", "turnouts": [] }
-      ],
-      "next_blocks": ["C_D"]
-    },
-    {
       "block_id": "C_D",
+      "lines": [
+        { "line_id": "UP_MAIN", "turnouts": [] },
+        { "line_id": "DN_MAIN", "turnouts": [] }
+      ],
+      "next_blocks": ["D_E"]
+    },
+    {
+      "block_id": "D_E",
+      "lines": [
+        { "line_id": "UP_MAIN", "turnouts": ["T3"] },
+        { "line_id": "UP_LOOP", "turnouts": ["T3", "T4"] },
+        { "line_id": "DN_MAIN", "turnouts": [] }
+      ],
+      "next_blocks": ["E_F"]
+    },
+    {
+      "block_id": "E_F",
       "lines": [
         { "line_id": "UP_MAIN", "turnouts": [] },
         { "line_id": "DN_MAIN", "turnouts": [] }
