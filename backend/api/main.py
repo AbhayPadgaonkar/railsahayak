@@ -6,12 +6,14 @@ from backend.rules.signals import check_signal_permission
 from backend.rules.tracks import check_line_entry, check_fouling
 from backend.rules.speed import determine_speed_limit
 from backend.rules.emergency import emergency_mode_decision
+from backend.rules.turnouts import check_turnout_conflict
 
 from backend.api.sensors_api import router as sensor_router
 from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
+from backend.services.route_service import RouteService
 
-
+route_service = RouteService(section_id="section_A")
 
 app = FastAPI(
     title="RailSahayak Decision API",
@@ -20,8 +22,6 @@ app = FastAPI(
 )
 
 app.include_router(sensor_router)
-
-delay_predictor = DelayPredictor()
 
 
 class Gradient(BaseModel):
@@ -36,19 +36,16 @@ class TrainRequest(BaseModel):
     line_id: str
     signal_state: str
     sectional_speed: int
-
-    scheduled_time: int        # minutes since midnight
-    current_time: int          # minutes since midnight
-
+    scheduled_time: int
+    current_time: int
     gradient: Optional[Gradient] = None
     condition: Optional[str] = None
     has_written_authority: bool = False
 
 
-
-
 class SystemContext(BaseModel):
-    occupied_lines: List[str]     
+    occupied_lines: List[str]
+    occupied_turnouts: List[str]
     fouling_segments: List[str]
     disaster_active: bool = False
 
@@ -65,6 +62,7 @@ class DecisionResponse(BaseModel):
     max_speed: Optional[int]
     reasons: List[str]
 
+
 class OptimizedOrder(BaseModel):
     train_id: str
     order: int
@@ -75,12 +73,11 @@ class SectionDecisionResponse(BaseModel):
     optimized_order: Optional[List[OptimizedOrder]] = None
 
 
-
 @app.post("/decision", response_model=SectionDecisionResponse)
 def make_decision(payload: SectionDecisionRequest):
     optimizer_input = []
     results = []
-    
+
     def compute_current_delay(train: TrainRequest) -> int:
         return max(0, train.current_time - train.scheduled_time)
 
@@ -96,10 +93,7 @@ def make_decision(payload: SectionDecisionRequest):
                     reasons=[emergency["reason"]],
                 )
             )
-        return SectionDecisionResponse(
-            decisions=results,
-            optimized_order=None,
-        )
+        return SectionDecisionResponse(decisions=results, optimized_order=None)
 
     for train in payload.trains:
         reasons = []
@@ -123,11 +117,11 @@ def make_decision(payload: SectionDecisionRequest):
         reasons.append(signal_result["reason"])
 
         line_result = check_line_entry(
-        train_id=train.train_id,
-        line_id=train.line_id,
-        occupied_lines=payload.context.occupied_lines,
-    )
-
+            train_id=train.train_id,
+            block_id=train.block_id,
+            line_id=train.line_id,
+            occupied_lines=payload.context.occupied_lines,
+        )
         if not line_result["can_enter"]:
             results.append(
                 DecisionResponse(
@@ -140,6 +134,29 @@ def make_decision(payload: SectionDecisionRequest):
             )
             continue
         reasons.append(line_result["reason"])
+
+        turnout_result = check_turnout_conflict(
+            train_id=train.train_id,
+            block_id=train.block_id,
+            line_id=train.line_id,
+            occupied_turnouts=payload.context.occupied_turnouts,
+            route_service=route_service,
+        )
+        if not turnout_result["can_proceed"]:
+            results.append(
+                DecisionResponse(
+                    train_id=train.train_id,
+                    allow_movement=False,
+                    allowed_actions=["HOLD"],
+                    max_speed=None,
+                    reasons=[turnout_result["reason"]],
+                )
+            )
+            continue
+
+        for t in turnout_result.get("required_turnouts", []):
+            if t not in payload.context.occupied_turnouts:
+                payload.context.occupied_turnouts.append(t)
 
         fouling_result = check_fouling(
             track_segment=train.block_id,
@@ -166,7 +183,6 @@ def make_decision(payload: SectionDecisionRequest):
 
         current_delay = compute_current_delay(train)
 
-
         speed_result = determine_speed_limit(
             sectional_speed=train.sectional_speed,
             condition=train.condition,
@@ -190,8 +206,6 @@ def make_decision(payload: SectionDecisionRequest):
             }
         )
 
-
-
         results.append(
             DecisionResponse(
                 train_id=train.train_id,
@@ -209,31 +223,24 @@ def make_decision(payload: SectionDecisionRequest):
         block_groups.setdefault(item["block_id"], []).append(item)
 
     for trains_in_block in block_groups.values():
-
-        # Group further by line
         line_groups = {}
         for t in trains_in_block:
             line_groups.setdefault(t["line_id"], []).append(t)
 
         for trains_in_line in line_groups.values():
-
-            # 🔒 GUARD: optimize ONLY if real contention exists
             if len(trains_in_line) <= 1:
                 continue
-
             optimized = optimize_train_order(trains_in_line)
             if optimized:
                 optimized_order.extend(
                     OptimizedOrder(train_id=t["train_id"], order=i)
                     for i, t in enumerate(optimized)
                 )
+
     return SectionDecisionResponse(
         decisions=results,
-        optimized_order=optimized_order if optimized_order else None
+        optimized_order=optimized_order if optimized_order else None,
     )
-
-
-
 
 
 @app.get("/health")

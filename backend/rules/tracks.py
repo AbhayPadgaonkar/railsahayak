@@ -1,15 +1,17 @@
 # backend/rules/tracks.py
 
-def check_line_entry(train_id, line_id, occupied_lines):
+def check_line_entry(train_id, block_id, line_id, occupied_lines):
     """
-    G&SR Absolute Block System:
-    - Only one train in a block section at a time
+    Indian Railways Absolute Block + Line Occupancy:
+    - One train per line per block
     """
-    
-    if line_id in occupied_lines:
+
+    key = f"{block_id}|{line_id}"
+
+    if key in occupied_lines:
         return {
             "can_enter": False,
-            "reason": f"Line {line_id} already occupied"
+            "reason": f"Line {line_id} in block {block_id} already occupied"
         }
 
     return {

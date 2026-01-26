@@ -1,0 +1,20 @@
+{
+  "section_id": "SECTION_A",
+  "routes": [
+    {
+      "block_id": "A_B",
+      "line_id": "UP_MAIN",
+      "turnouts": []
+    },
+    {
+      "block_id": "A_B",
+      "line_id": "UP_LOOP",
+      "turnouts": ["T1"]
+    },
+    {
+      "block_id": "A_B",
+      "line_id": "DN_MAIN",
+      "turnouts": []
+    }
+  ]
+}
