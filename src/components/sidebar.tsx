@@ -13,10 +13,10 @@ export default function Sidebar() {
   const pathname = usePathname(); // ✅ get current route
 
   return (
-    <aside className="bg-gray-800 text-gray-300 w-65 h-full pt-4 flex flex-col flex-shrink-0 border-r border-gray-700">
+    <aside className="bg-gray-800 text-gray-300 w-full lg:w-64 h-auto lg:h-full pt-2 lg:pt-4 flex flex-col flex-shrink-0 border-r border-gray-700">
       {/* Navigation Links */}
-      <nav className="pl-5 pr-5">
-        <ul className="space-y-2">
+      <nav className="px-3 lg:px-5">
+        <ul className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2">
           <li>
             <Link
               href="/"
@@ -24,7 +24,7 @@ export default function Sidebar() {
                 pathname === "/"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
-              }`}
+              } whitespace-nowrap`}
             >
               <MapPinned className="w-5 h-5" />
               <span>Live Map</span>
@@ -37,7 +37,7 @@ export default function Sidebar() {
                 pathname === "/crisismanagement"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
-              }`}
+              } whitespace-nowrap`}
             >
               <Siren className="w-5 h-5" />
               <span>Crisis Management</span>
@@ -50,7 +50,7 @@ export default function Sidebar() {
                 pathname === "/whatifsimulations"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
-              }`}
+              } whitespace-nowrap`}
             >
               <GitPullRequestArrow className="w-5 h-5" />
               <span>What If Simulations</span>
@@ -63,7 +63,7 @@ export default function Sidebar() {
                 pathname === "/auditlogs"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
-              }`}
+              } whitespace-nowrap`}
             >
               <FileClock className="w-5 h-5" />
               <span>Audit Logs</span>
@@ -76,7 +76,7 @@ export default function Sidebar() {
                 pathname === "/kpiboard"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
-              }`}
+              } whitespace-nowrap`}
             >
               <ChartColumn className="w-5 h-5" />
               <span>KPI Dashboard</span>
@@ -89,7 +89,7 @@ export default function Sidebar() {
                 pathname === "/chatassistant"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
-              }`}
+              } whitespace-nowrap`}
             >
               <BotMessageSquare className="w-5 h-5" />
               <span>Chat Assistant</span>

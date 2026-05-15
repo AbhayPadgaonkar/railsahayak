@@ -33,35 +33,35 @@ const RecommendationCard = ({
   }[priority];
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 hover:shadow-xl hover:border-gray-600 transition-all duration-200 flex flex-col justify-between">
+    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-3 hover:shadow-xl hover:border-gray-600 transition-all duration-200 flex flex-col justify-between">
       <div>
-        <div className="flex justify-between items-start mb-10">
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-base font-semibold text-white">{title}</h3>
           <span
             className={`text-xs font-bold px-2 py-0.5 rounded-full ${priorityColorClass}`}
           >
             {priority}
           </span>
         </div>
-        <p className="text-sm text-gray-400">
+        <p className="text-xs text-gray-400">
           <strong className="text-gray-300">Location:</strong> {location}
         </p>
-        <p className="text-sm text-gray-400 mb-8">
+        <p className="text-xs text-gray-400 mb-3">
           <strong className="text-gray-300">Duration:</strong> {duration}
         </p>
-        <p className="text-sm text-gray-500 italic mb-8">{description}</p>
+        <p className="text-xs text-gray-500 italic mb-4">{description}</p>
       </div>
 
       <div className="flex gap-2">
         <button
           onClick={() => onAccept(id)}
-          className="flex-1 bg-green-700 hover:bg-green-600 text-white font-semibold py-2 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+          className="flex-1 bg-green-700 hover:bg-green-600 text-white font-semibold py-1.5 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-sm"
         >
           Accept
         </button>
         <button
           onClick={() => onDismiss(id)}
-          className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+          className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-1.5 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-sm"
         >
           Dismiss
         </button>
@@ -166,15 +166,15 @@ const AIRecommendationPanel = () => {
   const handleDismiss = (id: string) => console.log(`❌ Dismissed: ${id}`);
 
   return (
-    <div className="bottom-0 left-0 right-0 z-50 p-4 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg">
-      <div className="flex justify-between items-center mb-4 px-4">
-        <h2 className="text-xl font-bold text-gray-100">AI Recommendations</h2>
+    <div className="bottom-0 left-0 right-0 z-50 p-3 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg flex flex-col flex-1 min-h-0">
+      <div className="flex justify-between items-center mb-2 px-2">
+        <h2 className="text-lg font-bold text-gray-100">AI Recommendations</h2>
         {totalPages > 1 && (
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrevPage}
               disabled={currentPage === 1}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               &lt;
             </button>
@@ -184,7 +184,7 @@ const AIRecommendationPanel = () => {
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               &gt;
             </button>
@@ -192,7 +192,7 @@ const AIRecommendationPanel = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-2 ">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-1 flex-1 min-h-0 overflow-y-auto">
         {currentRecommendations.map((rec) => (
           <RecommendationCard
             key={rec.id}

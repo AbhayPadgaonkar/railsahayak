@@ -72,7 +72,7 @@ export default function CommunicationGateway() {
   };
 
   return (
-    <aside className="bg-gray-800 text-gray-300 w-96 p-4 flex flex-col flex-shrink-0 border-l border-gray-700 h-full">
+    <aside className="bg-gray-800 text-gray-300 w-full lg:w-96 p-4 flex flex-col flex-shrink-0 border-l border-gray-700 h-full max-h-[40vh] lg:max-h-none">
       {/* Header with Dropdown */}
       <div className="flex justify-between items-center mb-4 px-2 flex-shrink-0">
         <h2 className="text-xl font-bold text-white tracking-tight">

@@ -299,7 +299,7 @@ const StationYardLayout = () => {
   };
 
   return (
-    <div className=" pt-1   border bg-gray-950  border-gray-700 w-full h-12/12 mx-auto">
+    <div className="pt-1 border bg-gray-950 border-gray-700 w-full h-full min-h-[360px] lg:min-h-[420px] mx-auto flex flex-col">
       <div className="flex justify-start pl-2.5 items-start gap-8 mb-1">
         <div className="flex items-center gap-3">
           <div
@@ -317,8 +317,9 @@ const StationYardLayout = () => {
         </div>
       </div>
 
-      <svg viewBox="0 0 1200 408" className="w-full h-full rounded-md">
-        {SIGNAL_CONFIG.map((signal) => {
+      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+        <svg viewBox="0 0 1200 408" className="min-w-[720px] w-full h-full rounded-md">
+          {SIGNAL_CONFIG.map((signal) => {
           const [t1, t2] = signal.connectedTo.map((id) =>
             LAYOUT_CONFIG.find((t) => t.id === id)
           );
@@ -399,52 +400,53 @@ const StationYardLayout = () => {
           );
         })}
 
-        <g>
-          {/* Layer 1: Base Tracks (with unique IDs for animation) */}
-          {LAYOUT_CONFIG.map((segment) => (
-            <path
-              id={segment.id} // IMPORTANT: ID is needed for getElementById
-              key={segment.id}
-              d={segment.d}
-              stroke={
-                trackStatus[segment.id] === "free"
-                  ? "#22c55e"
-                  : colorMap[trackStatus[segment.id]]
-              }
-              strokeWidth={6}
-              strokeDasharray={segment.isBlock ? "8 4" : "none"}
-              fill="none"
-              style={{ transition: "stroke 0.5s ease" }}
-            />
-          ))}
+          <g>
+            {/* Layer 1: Base Tracks (with unique IDs for animation) */}
+            {LAYOUT_CONFIG.map((segment) => (
+              <path
+                id={segment.id} // IMPORTANT: ID is needed for getElementById
+                key={segment.id}
+                d={segment.d}
+                stroke={
+                  trackStatus[segment.id] === "free"
+                    ? "#22c55e"
+                    : colorMap[trackStatus[segment.id]]
+                }
+                strokeWidth={6}
+                strokeDasharray={segment.isBlock ? "8 4" : "none"}
+                fill="none"
+                style={{ transition: "stroke 0.5s ease" }}
+              />
+            ))}
 
-          {/* Layer 2: Render the animated trains
-          {trains.map((train) => (
-            <Train
-              key={train.id}
-              trainId={train.id}
-              segmentId={train.currentSegmentId}
-              progress={train.progress}
-            />
-          ))} */}
+            {/* Layer 2: Render the animated trains
+            {trains.map((train) => (
+              <Train
+                key={train.id}
+                trainId={train.id}
+                segmentId={train.currentSegmentId}
+                progress={train.progress}
+              />
+            ))} */}
 
-          {/* Labels */}
-          <text
-            x="10"
-            y="140"
-            className="text-xs font-sans font-semibold fill-gray-100"
-          >
-            UP MAIN
-          </text>
-          <text
-            x="10"
-            y="270"
-            className="text-xs font-sans font-semibold fill-gray-100"
-          >
-            DN MAIN
-          </text>
-        </g>
-      </svg>
+            {/* Labels */}
+            <text
+              x="10"
+              y="140"
+              className="text-xs font-sans font-semibold fill-gray-100"
+            >
+              UP MAIN
+            </text>
+            <text
+              x="10"
+              y="270"
+              className="text-xs font-sans font-semibold fill-gray-100"
+            >
+              DN MAIN
+            </text>
+          </g>
+        </svg>
+      </div>
     </div>
   );
 };
