@@ -33,6 +33,32 @@ class ControllerHub:
 
 hub = ControllerHub()
 
+ALLOWED_TYPES = {
+	"HANDSHAKE",
+	"HANDSHAKE_ACK",
+	"CHAT",
+	"ACK",
+	"ERROR",
+	"SIGNAL_CLEARANCE_REQUEST",
+	"SIGNAL_CLEARANCE_REPLY",
+	"LINE_ENTRY_REQUEST",
+	"LINE_ENTRY_REPLY",
+	"BLOCK_RELEASE_NOTICE",
+	"ROUTE_SET_REQUEST",
+	"ROUTE_SET_CONFIRMED",
+	"TURNOUT_CONFLICT_ALERT",
+	"FOULING_ALERT",
+	"FOULING_CLEAR",
+	"SPEED_RESTRICTION_NOTICE",
+	"EMERGENCY_DECLARATION",
+	"EMERGENCY_CLEAR",
+	"PRIORITY_OVERRIDE_NOTICE",
+	"OPTIMIZED_ORDER_BROADCAST",
+	"SENSOR_STATUS_UPDATE",
+}
+
+DIRECT_TYPES = ALLOWED_TYPES - {"HANDSHAKE", "HANDSHAKE_ACK", "ERROR"}
+
 
 def send_json(conn: socket.socket, payload: dict):
 	data = (json.dumps(payload) + "\n").encode("utf-8")
@@ -85,8 +111,13 @@ def handle_client(conn: socket.socket, addr):
 			if not message:
 				break
 
-			if message.get("type") != "CHAT":
-				send_json(conn, {"type": "ERROR", "reason": "Unsupported message"})
+			msg_type = message.get("type")
+			if msg_type not in ALLOWED_TYPES:
+				send_json(conn, {"type": "ERROR", "reason": "Unsupported type"})
+				continue
+
+			if msg_type not in DIRECT_TYPES:
+				send_json(conn, {"type": "ERROR", "reason": "Direct type required"})
 				continue
 
 			to_id = message.get("to_controller_id")
@@ -103,13 +134,16 @@ def handle_client(conn: socket.socket, addr):
 				continue
 
 			relay = {
-				"type": "CHAT",
+				"type": msg_type,
 				"from_controller_id": controller_id,
 				"from_name": name,
 				"from_section": section,
+				"to_controller_id": to_id,
 				"text": message.get("text", ""),
 				"timestamp": message.get("timestamp"),
 				"msg_id": message.get("msg_id"),
+				"priority": message.get("priority", "ROUTINE"),
+				"context": message.get("context", {}),
 			}
 			send_json(target.conn, relay)
 
