@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RailSahayak
 
-## Getting Started
+RailSahayak is a decision-support and communications dashboard for Indian Railways section controllers. It combines rule-based safety checks (G&SR aligned), operational optimization, and a modern control-room UI for live map monitoring, advisories, and controller-to-controller messaging.
 
-First, run the development server:
+## Highlights
+
+- **Decision engine**: Signal authority, line occupancy, fouling detection, turnout conflicts, and speed restrictions.
+- **Optimization**: IR-compliant precedence and order optimization across trains sharing a block and line.
+- **Operations UI**: Live yard diagram, AI recommendations panel, and built-in comms gateway.
+- **Comms relay**: Separate WebSocket service for controller-to-controller messaging.
+
+## Architecture
+
+- **Frontend (Next.js)**: Control-room dashboard and panels.
+- **Backend (FastAPI)**: Decision API and sensor snapshot endpoint.
+- **Comms relay (WebSocket)**: Lightweight controller message hub.
+
+## Quick Start
+
+### 1) Backend API
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pip install -r backend/requirements.txt
+python -m uvicorn backend.api.main:app --reload
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+API:
+- `POST /decision` - decision + optimization output
+- `GET /sensors` - sensor snapshot
+- `GET /health` - health check
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2) WebSocket Comms Relay
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+python backend/communication/ws_server.py
+```
 
-## Learn More
+Default: `ws://localhost:8001`
 
-To learn more about Next.js, take a look at the following resources:
+### 3) Frontend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open http://localhost:3000
 
-## Deploy on Vercel
+## Demo: Two Controllers on One PC
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Open two browser windows with different controller identities:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **CCG-VR**:
+	`http://localhost:3000/?controller_id=CCG-VR&name=Controller%20CCG-VR&section=CCG-VR`
+
+- **VR-VLSD**:
+	`http://localhost:3000/?controller_id=VR-VLSD&name=Controller%20VR-VLSD&section=VR-VLSD`
+
+Type a message in one window and it will appear in the other.
+
+## Environment
+
+Optional override for the WebSocket relay URL:
+
+```
+NEXT_PUBLIC_COMM_WS_URL=ws://localhost:8001
+```
+
+## Repository Layout
+
+- `backend/api` - FastAPI decision and sensor endpoints
+- `backend/rules` - safety and operational rules (signals, tracks, speed, emergency, turnouts)
+- `backend/optimizer` - train order optimization
+- `backend/communication` - TCP mock + WebSocket relay
+- `src/components` - dashboard UI panels and live yard layout
+
+## Notes
+
+- Train types supported: `VANDE_BHARAT`, `RAJDHANI`, `SHATABDI`, `MAIL_EXPRESS`, `PASSENGER`, `MEMU`, `GOODS`, `DEPARTMENTAL`.
+- The decision engine expects `block_id|line_id` keys in occupancy contexts.
