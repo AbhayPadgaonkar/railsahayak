@@ -17,6 +17,16 @@ RailSahayak is a decision-support and communications dashboard for Indian Railwa
 
 ## Quick Start
 
+### 0) Docker (all services)
+
+```bash
+docker compose up --build
+```
+
+- Frontend: http://localhost:3000
+- Decision API: http://localhost:8000
+- Comms relay: ws://localhost:8001
+
 ### 1) Backend API
 
 ```bash

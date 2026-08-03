@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+.venv
+.git
+.github
+coverage
+*.tsbuildinfo
+.env*
+!.env.example
+backend
+roadmap.md
+Dockerfile
+docker-compose.yml
