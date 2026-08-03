@@ -1,0 +1,26 @@
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_COMM_WS_URL: ${NEXT_PUBLIC_COMM_WS_URL:-ws://localhost:8001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+      - comms
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+
+  comms:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "backend/communication/ws_server.py"]
+    ports:
+      - "8001:8001"
