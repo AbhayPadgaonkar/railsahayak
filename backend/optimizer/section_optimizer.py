@@ -9,7 +9,7 @@ def optimize_train_order(trains):
     {
         train_id,
         priority,             # 1 = highest
-        predicted_delay,
+        current_delay,
         block_id,
         line_id,
         train_type,           # GOODS / RAJDHANI / etc
