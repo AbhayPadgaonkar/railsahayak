@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { YardSchema } from "@/lib/yardlayout/schema";
-import { buildYardLayout } from "@/lib/yardlayout/builder";
+import { SignalAspect, YardSchema } from "@/lib/yardlayout/schema";
+import { buildYardLayout, BuiltSegment } from "@/lib/yardlayout/builder";
 import { getYardSchema } from "@/lib/api";
 import demoYard from "@/config/yards/demo_yard.json";
 
@@ -11,17 +11,60 @@ type TrackStatus = "free" | "occupied" | "blocked";
 
 interface TrainState {
   id: string;
-  currentSegmentId: string;
-  progress: number; // Position on the segment (0.0 to 1.0)
-  speed: number; // Pixels per second
+  segmentId: string;
+  t: number; // position along the SVG path (0..1), in path coordinates
+  dir: 1 | -1; // traversal direction along the path
+  speed: number; // pixels per second
 }
 
 interface StationYardLayoutProps {
   schema?: YardSchema;
   stationId?: string;
+  signalOverrides?: Record<string, SignalAspect>;
+  statusOverrides?: Record<string, TrackStatus>;
 }
 
-const StationYardLayout = ({ schema, stationId = "demo_yard" }: StationYardLayoutProps) => {
+const parseEndpoints = (d: string) => {
+  const nums = d.match(/-?[\d.]+/g)!.map(Number);
+  return { sx: nums[0], sy: nums[1], ex: nums[2], ey: nums[3] };
+};
+
+const TrainMarker = ({ train }: { train: TrainState }) => {
+  const ref = useRef<SVGGElement>(null);
+
+  useEffect(() => {
+    const pathEl = document.getElementById(
+      train.segmentId
+    ) as SVGPathElement | null;
+    if (!pathEl || !ref.current) return;
+    const pt = pathEl.getPointAtLength(train.t * pathEl.getTotalLength());
+    ref.current.setAttribute("transform", `translate(${pt.x}, ${pt.y})`);
+  }, [train]);
+
+  return (
+    <g ref={ref}>
+      <circle r={4} fill="#f8fafc" stroke="#0f172a" strokeWidth={1.5} />
+      <rect x={-22} y={-24} width={44} height={13} rx={3} fill="#1e3a8a" stroke="#3b82f6" strokeWidth={0.75} />
+      <text
+        x={0}
+        y={-14}
+        textAnchor="middle"
+        fontSize="8.5"
+        fill="#e2e8f0"
+        fontFamily="sans-serif"
+      >
+        {train.id}
+      </text>
+    </g>
+  );
+};
+
+const StationYardLayout = ({
+  schema,
+  stationId = "demo_yard",
+  signalOverrides,
+  statusOverrides,
+}: StationYardLayoutProps) => {
   const [fetchedSchema, setFetchedSchema] = useState<YardSchema | null>(null);
 
   useEffect(() => {
@@ -49,37 +92,53 @@ const StationYardLayout = ({ schema, stationId = "demo_yard" }: StationYardLayou
     [yard]
   );
 
-  const [trains, setTrains] = useState<TrainState[]>([]);
-  const [signals, setSignals] = useState(yard.signals);
-  const [trackStatus, setTrackStatus] = useState<Record<string, TrackStatus>>(
-    {}
+  const signals = useMemo(
+    () =>
+      yard.signals.map((s) => ({
+        ...s,
+        state: signalOverrides?.[s.id] ?? s.state,
+      })),
+    [yard, signalOverrides]
   );
+
+  const [trains, setTrains] = useState<TrainState[]>([]);
   const lastUpdateTimeRef = useRef<number>(0);
 
+  // Spawn demo trains at the entry slices of the first UP and DN lines
   useEffect(() => {
-    setSignals(yard.signals);
+    const lineSlices = (lineId: string) =>
+      yard.segments.filter((s) => s.lineId === lineId);
+
+    const upLine = yard.segments.find((s) => s.direction === "UP")?.lineId;
+    const dnLine = yard.segments.find((s) => s.direction === "DN")?.lineId;
+
+    const init: TrainState[] = [];
+    if (upLine) {
+      const entry = lineSlices(upLine)[0];
+      if (entry)
+        init.push({ id: "T12926", segmentId: entry.id, t: 0, dir: 1, speed: 45 });
+    }
+    if (dnLine) {
+      const slices = lineSlices(dnLine);
+      const entry = slices[slices.length - 1];
+      if (entry)
+        init.push({ id: "T90302", segmentId: entry.id, t: 1, dir: -1, speed: 35 });
+    }
+    setTrains(init);
+    lastUpdateTimeRef.current = performance.now();
   }, [yard]);
 
-  // Initialize simulation
-  // useEffect(() => {
-  //   setTrains([
-  //     { id: "T12926", currentSegmentId: "UP_MAIN__0", progress: 0, speed: 30 },
-  //     { id: "T90302", currentSegmentId: "DN_MAIN__0", progress: 0, speed: 30 },
-  //   ]);
-  //   lastUpdateTimeRef.current = performance.now();
-  // }, []);
-
-  // Derive track status from train positions
-  useEffect(() => {
-    const newStatus: Record<string, TrackStatus> = {};
+  // Track status: derived from train positions, then live overrides applied
+  const trackStatus = useMemo(() => {
+    const status: Record<string, TrackStatus> = {};
     yard.segments.forEach((el) => {
-      newStatus[el.id] = "free";
+      status[el.id] = "free";
     });
     trains.forEach((train) => {
-      newStatus[train.currentSegmentId] = "occupied";
+      status[train.segmentId] = "occupied";
     });
-    setTrackStatus(newStatus);
-  }, [trains, yard]);
+    return { ...status, ...statusOverrides };
+  }, [trains, yard, statusOverrides]);
 
   // Main Animation Loop
   useEffect(() => {
@@ -90,43 +149,68 @@ const StationYardLayout = ({ schema, stationId = "demo_yard" }: StationYardLayou
       lastUpdateTimeRef.current = timestamp;
 
       setTrains((currentTrains) => {
-        const occupiedSegments = new Set(
-          currentTrains.map((t) => t.currentSegmentId)
+        const occupiedBy = new Map(
+          currentTrains.map((t) => [t.segmentId, t.id] as const)
         );
 
         return currentTrains.map((train) => {
-          const segmentElement = document.getElementById(
-            train.currentSegmentId
+          const segment = segmentById.get(train.segmentId);
+          const pathEl = document.getElementById(
+            train.segmentId
           ) as SVGPathElement | null;
-          if (!segmentElement) return train;
+          if (!segment || !pathEl) return train;
 
-          const segmentLength = segmentElement.getTotalLength();
-          const distanceToTravel = train.speed * deltaTime;
-          const newProgress = train.progress + distanceToTravel / segmentLength;
+          const length = pathEl.getTotalLength();
+          const t = train.t + (train.dir * train.speed * deltaTime) / length;
 
-          // If train finishes segment, find the next one
-          if (newProgress >= 1) {
-            const currentSegmentConfig = segmentById.get(train.currentSegmentId);
-            if (!currentSegmentConfig) return train;
-
-            const availableNextSegments =
-              currentSegmentConfig.connectedTo.filter(
-                (id) => !occupiedSegments.has(id)
-              );
-
-            if (availableNextSegments.length > 0) {
-              const nextSegmentId =
-                availableNextSegments[
-                  Math.floor(Math.random() * availableNextSegments.length)
-                ];
-              return { ...train, currentSegmentId: nextSegmentId, progress: 0 };
-            } else {
-              // No path available, stop at the end of the segment
-              return { ...train, progress: 1 };
-            }
+          if (t <= 1 && t >= 0) {
+            return { ...train, t };
           }
 
-          return { ...train, progress: newProgress };
+          // Reached an endpoint of the current segment
+          const clamped = train.dir === 1 ? 1 : 0;
+          const ep = parseEndpoints(segment.d);
+          const exitX = train.dir === 1 ? ep.ex : ep.sx;
+          const exitY = train.dir === 1 ? ep.ey : ep.sy;
+
+          // Hold at a red signal guarding this exit (line segments only)
+          const guardingRed = signals.find(
+            (s) => s.lineId === segment.lineId && s.x === exitX && s.state === "red"
+          );
+          if (guardingRed) {
+            return { ...train, t: clamped };
+          }
+
+          // Pick a connected, unoccupied segment sharing this endpoint
+          type Candidate = { segment: BuiltSegment; t: number; dir: 1 | -1 };
+          const candidates: Candidate[] = segment.connectedTo
+            .map((id) => segmentById.get(id))
+            .filter((ns): ns is BuiltSegment => {
+              if (!ns) return false;
+              const owner = occupiedBy.get(ns.id);
+              return !owner || owner === train.id;
+            })
+            .flatMap((ns): Candidate[] => {
+              const nep = parseEndpoints(ns.d);
+              if (nep.sx === exitX && nep.sy === exitY)
+                return [{ segment: ns, t: 0, dir: 1 }];
+              if (nep.ex === exitX && nep.ey === exitY)
+                return [{ segment: ns, t: 1, dir: -1 }];
+              return [];
+            });
+
+          if (candidates.length === 0) {
+            return { ...train, t: clamped };
+          }
+
+          const pick =
+            candidates[Math.floor(Math.random() * candidates.length)];
+          return {
+            ...train,
+            segmentId: pick.segment.id,
+            t: pick.t,
+            dir: pick.dir,
+          };
         });
       });
 
@@ -135,7 +219,7 @@ const StationYardLayout = ({ schema, stationId = "demo_yard" }: StationYardLayou
 
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [segmentById]);
+  }, [segmentById, signals]);
 
   const colorMap: Record<TrackStatus, string> = {
     free: "#22c55e",
@@ -251,15 +335,10 @@ const StationYardLayout = ({ schema, stationId = "demo_yard" }: StationYardLayou
               />
             ))}
 
-            {/* Layer 2: Render the animated trains
+            {/* Layer 2: Animated trains */}
             {trains.map((train) => (
-              <Train
-                key={train.id}
-                trainId={train.id}
-                segmentId={train.currentSegmentId}
-                progress={train.progress}
-              />
-            ))} */}
+              <TrainMarker key={train.id} train={train} />
+            ))}
 
             {/* Labels */}
             {yard.labels.map((label) => (

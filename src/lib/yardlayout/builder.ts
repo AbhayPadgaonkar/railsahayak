@@ -1,4 +1,5 @@
 import {
+  LineDirection,
   SignalAspect,
   YardLabel,
   YardLine,
@@ -11,12 +12,14 @@ export interface BuiltSegment {
   connectedTo: string[];
   isBlock?: boolean;
   lineId?: string;
+  direction?: LineDirection;
   turnoutId?: string;
 }
 
 export interface BuiltSignal {
   id: string;
   name: string;
+  lineId: string;
   x: number;
   y: number;
   state: SignalAspect;
@@ -145,6 +148,7 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
         d: `M ${x1} ${line.y} L ${x2} ${line.y}`,
         connectedTo: [],
         lineId: line.id,
+        direction: line.direction,
         ...(isBlock ? { isBlock: true } : {}),
       };
       addSegment(seg);
@@ -195,6 +199,7 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
     return {
       id: s.id,
       name: s.name ?? s.id,
+      lineId: line.id,
       x: s.at_x,
       y: line.y,
       state: s.initial_state,
