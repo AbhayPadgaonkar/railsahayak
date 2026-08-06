@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { YardSchema } from "@/lib/yardlayout/schema";
 import { buildYardLayout } from "@/lib/yardlayout/builder";
+import { getYardSchema } from "@/lib/api";
 import demoYard from "@/config/yards/demo_yard.json";
 
 type TrackStatus = "free" | "occupied" | "blocked";
@@ -17,12 +18,30 @@ interface TrainState {
 
 interface StationYardLayoutProps {
   schema?: YardSchema;
+  stationId?: string;
 }
 
-const StationYardLayout = ({ schema }: StationYardLayoutProps) => {
+const StationYardLayout = ({ schema, stationId = "demo_yard" }: StationYardLayoutProps) => {
+  const [fetchedSchema, setFetchedSchema] = useState<YardSchema | null>(null);
+
+  useEffect(() => {
+    if (schema) return;
+    let cancelled = false;
+    getYardSchema(stationId)
+      .then((data) => {
+        if (!cancelled) setFetchedSchema(data);
+      })
+      .catch(() => {
+        // Backend unreachable or station unknown — fall back to bundled demo layout
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [schema, stationId]);
+
   const yard = useMemo(
-    () => buildYardLayout(schema ?? (demoYard as YardSchema)),
-    [schema]
+    () => buildYardLayout(schema ?? fetchedSchema ?? (demoYard as YardSchema)),
+    [schema, fetchedSchema]
   );
 
   const segmentById = useMemo(

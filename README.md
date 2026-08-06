@@ -37,6 +37,7 @@ python -m uvicorn backend.api.main:app --reload
 API:
 - `POST /decision` - decision + optimization output
 - `GET /sensors` - sensor snapshot
+- `GET /yard/{station_id}` - yard layout schema (drives the dynamic yard map; add `<station>.json` under `backend/config/yards/`)
 - `GET /health` - health check
 
 ### 2) WebSocket Comms Relay
