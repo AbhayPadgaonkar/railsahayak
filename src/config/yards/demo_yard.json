@@ -33,6 +33,16 @@
     { "at_x": 0, "lines": ["UP_MAIN", "DN_MAIN"] },
     { "at_x": 1200, "lines": ["UP_MAIN", "DN_MAIN"] }
   ],
+  "sensor_zones": [
+    { "id": "TC_UP_ENTRY", "line": "UP_MAIN", "from_x": 0, "to_x": 400 },
+    { "id": "TC_UP_MID", "line": "UP_MAIN", "from_x": 400, "to_x": 800 },
+    { "id": "TC_UP_EXIT", "line": "UP_MAIN", "from_x": 800, "to_x": 1200 },
+    { "id": "TC_DN_ENTRY", "line": "DN_MAIN", "from_x": 800, "to_x": 1200 },
+    { "id": "TC_DN_MID", "line": "DN_MAIN", "from_x": 400, "to_x": 800 },
+    { "id": "TC_DN_EXIT", "line": "DN_MAIN", "from_x": 0, "to_x": 400 },
+    { "id": "TC_COMMON_LOOP", "line": "COMMON_LOOP", "from_x": 500, "to_x": 700 },
+    { "id": "TC_SIDE_LOOP", "line": "SIDE_LOOP", "from_x": 500, "to_x": 700 }
+  ],
   "labels": [
     { "text": "UP MAIN", "x": 10, "y": 140 },
     { "text": "DN MAIN", "x": 10, "y": 270 }

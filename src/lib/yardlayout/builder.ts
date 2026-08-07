@@ -25,12 +25,19 @@ export interface BuiltSignal {
   state: SignalAspect;
 }
 
+export interface BuiltZone {
+  id: string;
+  lineId: string;
+  segmentIds: string[];
+}
+
 export interface BuiltYard {
   stationId: string;
   stationName: string;
   viewBox: string;
   segments: BuiltSegment[];
   signals: BuiltSignal[];
+  zones: BuiltZone[];
   labels: YardLabel[];
 }
 
@@ -92,6 +99,21 @@ function validate(schema: YardSchema): void {
       if (!within(b.at_x, line)) {
         throw new Error(`Block boundary at x=${b.at_x} is outside line "${lineId}"`);
       }
+    }
+  }
+
+  const zoneIds = new Set<string>();
+  for (const z of schema.sensor_zones ?? []) {
+    if (zoneIds.has(z.id)) {
+      throw new Error(`Duplicate sensor zone id "${z.id}"`);
+    }
+    zoneIds.add(z.id);
+    const line = requireLine(z.line, `Sensor zone "${z.id}"`);
+    if (z.from_x >= z.to_x) {
+      throw new Error(`Sensor zone "${z.id}" has zero or negative length`);
+    }
+    if (!within(z.from_x, line) || !within(z.to_x, line)) {
+      throw new Error(`Sensor zone "${z.id}" range is outside line "${z.line}"`);
     }
   }
 }
@@ -206,12 +228,23 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
     };
   });
 
+  const zones: BuiltZone[] = (schema.sensor_zones ?? []).map((z) => {
+    const segmentIds = (lineSlices.get(z.line) ?? [])
+      .filter((seg) => {
+        const nums = seg.d.match(/-?[\d.]+/g)!.map(Number);
+        return nums[0] < z.to_x && nums[2] > z.from_x;
+      })
+      .map((seg) => seg.id);
+    return { id: z.id, lineId: z.line, segmentIds };
+  });
+
   return {
     stationId: schema.station_id,
     stationName: schema.station_name,
     viewBox: `0 0 ${schema.canvas.width} ${schema.canvas.height}`,
     segments,
     signals,
+    zones,
     labels: schema.labels ?? [],
   };
 }

@@ -36,6 +36,13 @@ export interface YardBlockBoundary {
   lines: string[];
 }
 
+export interface YardSensorZone {
+  id: string;
+  line: string;
+  from_x: number;
+  to_x: number;
+}
+
 export interface YardLabel {
   text: string;
   x: number;
@@ -50,5 +57,6 @@ export interface YardSchema {
   turnouts: YardTurnout[];
   signals: YardSignal[];
   block_boundaries?: YardBlockBoundary[];
+  sensor_zones?: YardSensorZone[];
   labels?: YardLabel[];
 }

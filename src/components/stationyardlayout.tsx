@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { SignalAspect, YardSchema } from "@/lib/yardlayout/schema";
 import { buildYardLayout, BuiltSegment } from "@/lib/yardlayout/builder";
-import { getYardSchema } from "@/lib/api";
+import { getYardSchema, SensorSnapshot } from "@/lib/api";
 import demoYard from "@/config/yards/demo_yard.json";
 
 type TrackStatus = "free" | "occupied" | "blocked";
@@ -20,6 +20,7 @@ interface TrainState {
 interface StationYardLayoutProps {
   schema?: YardSchema;
   stationId?: string;
+  sensorState?: SensorSnapshot;
   signalOverrides?: Record<string, SignalAspect>;
   statusOverrides?: Record<string, TrackStatus>;
 }
@@ -62,6 +63,7 @@ const TrainMarker = ({ train }: { train: TrainState }) => {
 const StationYardLayout = ({
   schema,
   stationId = "demo_yard",
+  sensorState,
   signalOverrides,
   statusOverrides,
 }: StationYardLayoutProps) => {
@@ -96,10 +98,24 @@ const StationYardLayout = ({
     () =>
       yard.signals.map((s) => ({
         ...s,
-        state: signalOverrides?.[s.id] ?? s.state,
+        state: signalOverrides?.[s.id] ?? sensorState?.signals[s.id] ?? s.state,
       })),
-    [yard, signalOverrides]
+    [yard, signalOverrides, sensorState]
   );
+
+  // Sensor zones reported occupied by the backend → mark their slices occupied
+  const sensorStatusOverrides = useMemo(() => {
+    if (!sensorState) return undefined;
+    const overrides: Record<string, TrackStatus> = {};
+    for (const zone of yard.zones) {
+      if (sensorState.zones[zone.id]) {
+        zone.segmentIds.forEach((id) => {
+          overrides[id] = "occupied";
+        });
+      }
+    }
+    return overrides;
+  }, [sensorState, yard]);
 
   const [trains, setTrains] = useState<TrainState[]>([]);
   const lastUpdateTimeRef = useRef<number>(0);
@@ -128,7 +144,7 @@ const StationYardLayout = ({
     lastUpdateTimeRef.current = performance.now();
   }, [yard]);
 
-  // Track status: derived from train positions, then live overrides applied
+  // Track status: derived from train positions, then sensor + manual overrides applied
   const trackStatus = useMemo(() => {
     const status: Record<string, TrackStatus> = {};
     yard.segments.forEach((el) => {
@@ -137,8 +153,8 @@ const StationYardLayout = ({
     trains.forEach((train) => {
       status[train.segmentId] = "occupied";
     });
-    return { ...status, ...statusOverrides };
-  }, [trains, yard, statusOverrides]);
+    return { ...status, ...sensorStatusOverrides, ...statusOverrides };
+  }, [trains, yard, sensorStatusOverrides, statusOverrides]);
 
   // Main Animation Loop
   useEffect(() => {
