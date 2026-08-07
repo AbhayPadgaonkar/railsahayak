@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Users, ChevronDown, SendHorizontal } from "lucide-react";
+import { getSession } from "@/lib/auth";
 
 
 // --- TYPE DEFINITIONS ---
@@ -24,6 +25,7 @@ interface ChatMessage {
 const KNOWN_CONTROLLERS: Controller[] = [
   { controller_id: "CCG-VR", name: "Controller CCG-VR", section: "CCG-VR", status: "online" },
   { controller_id: "VR-VLSD", name: "Controller VR-VLSD", section: "VR-VLSD", status: "online" },
+  { controller_id: "VR-BL", name: "Controller VR-BL", section: "VR-BL", status: "online" },
 ];
 
 const DEFAULT_SELF: Controller = {
@@ -63,10 +65,12 @@ export default function CommunicationGateway() {
   }, []);
 
   useEffect(() => {
+    const session = getSession();
     const params = new URLSearchParams(window.location.search);
-    const controllerId = params.get("controller_id") || DEFAULT_SELF.controller_id;
-    const name = params.get("name") || DEFAULT_SELF.name;
-    const section = params.get("section") || DEFAULT_SELF.section;
+    const controllerId =
+      params.get("controller_id") || session?.controller_id || DEFAULT_SELF.controller_id;
+    const name = params.get("name") || session?.name || DEFAULT_SELF.name;
+    const section = params.get("section") || session?.section || DEFAULT_SELF.section;
 
     setSelfController({
       controller_id: controllerId,

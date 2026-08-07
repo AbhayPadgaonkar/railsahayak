@@ -19,9 +19,9 @@ export default function Sidebar() {
         <ul className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2">
           <li>
             <Link
-              href="/"
+              href="/dashboard"
               className={`flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 ${
-                pathname === "/"
+                pathname === "/dashboard"
                   ? "bg-sky-600 text-white"
                   : "hover:bg-sky-600 hover:text-white"
               } whitespace-nowrap`}

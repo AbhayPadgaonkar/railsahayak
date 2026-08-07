@@ -1,0 +1,20 @@
+[
+  {
+    "controller_id": "CCG-VR",
+    "password": "ccgvr123",
+    "name": "A. Sharma",
+    "section": "CCG-VR"
+  },
+  {
+    "controller_id": "VR-VLSD",
+    "password": "vrvlsd123",
+    "name": "R. Patil",
+    "section": "VR-VLSD"
+  },
+  {
+    "controller_id": "VR-BL",
+    "password": "vrbl123",
+    "name": "S. Deshmukh",
+    "section": "VR-BL"
+  }
+]

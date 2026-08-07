@@ -36,6 +36,7 @@ python -m uvicorn backend.api.main:app --reload
 
 API:
 - `POST /decision` - decision + optimization output
+- `POST /login` / `GET /me` / `POST /logout` - controller auth (demo credentials in `backend/config/users.json`)
 - `GET /sensors` - sensor snapshot
 - `GET /yard/{station_id}` - yard layout schema (drives the dynamic yard map; add `<station>.json` under `backend/config/yards/`)
 - `GET /health` - health check
@@ -55,7 +56,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000 - landing page. Sign in at `/login` with demo credentials (`CCG-VR` / `ccgvr123`, `VR-VLSD` / `vrvlsd123`, `VR-BL` / `vrbl123`) to reach the dashboard.
 
 ## Demo: Two Controllers on One PC
 
