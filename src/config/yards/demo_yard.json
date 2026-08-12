@@ -1,0 +1,50 @@
+{
+  "station_id": "DEMO",
+  "station_name": "Demo Crossing Station",
+  "canvas": { "width": 1200, "height": 408 },
+  "lines": [
+    { "id": "UP_MAIN", "y": 150, "direction": "UP", "from_x": 0, "to_x": 1200 },
+    { "id": "DN_MAIN", "y": 250, "direction": "DN", "from_x": 0, "to_x": 1200 },
+    { "id": "COMMON_LOOP", "y": 70, "direction": "COMMON", "from_x": 500, "to_x": 700 },
+    { "id": "SIDE_LOOP", "y": 330, "direction": "COMMON", "from_x": 500, "to_x": 700 }
+  ],
+  "turnouts": [
+    { "id": "T1", "from_line": "UP_MAIN", "from_x": 400, "to_line": "COMMON_LOOP", "to_x": 500 },
+    { "id": "T2", "from_line": "COMMON_LOOP", "from_x": 700, "to_line": "UP_MAIN", "to_x": 800 },
+    { "id": "T3", "from_line": "DN_MAIN", "from_x": 400, "to_line": "SIDE_LOOP", "to_x": 500 },
+    { "id": "T4", "from_line": "SIDE_LOOP", "from_x": 700, "to_line": "DN_MAIN", "to_x": 800 },
+    { "id": "X1", "from_line": "DN_MAIN", "from_x": 200, "to_line": "UP_MAIN", "to_x": 300 },
+    { "id": "X2", "from_line": "DN_MAIN", "from_x": 1000, "to_line": "UP_MAIN", "to_x": 900 }
+  ],
+  "signals": [
+    { "id": "Outer_Warner_UP", "line": "UP_MAIN", "at_x": 100, "initial_state": "green" },
+    { "id": "Home_UP", "line": "UP_MAIN", "at_x": 200, "initial_state": "red" },
+    { "id": "Starter_UP", "line": "UP_MAIN", "at_x": 700, "initial_state": "green" },
+    { "id": "Adv_Starter_UP", "line": "UP_MAIN", "at_x": 1000, "initial_state": "red" },
+    { "id": "Outer_Warner_DN", "line": "DN_MAIN", "at_x": 1100, "initial_state": "red" },
+    { "id": "Home_DN", "line": "DN_MAIN", "at_x": 1000, "initial_state": "green" },
+    { "id": "Starter_DN", "line": "DN_MAIN", "at_x": 500, "initial_state": "green" },
+    { "id": "Adv_Starter_DN", "line": "DN_MAIN", "at_x": 100, "initial_state": "red" },
+    { "id": "Loop_Starter_DN", "line": "COMMON_LOOP", "at_x": 500, "initial_state": "green" },
+    { "id": "Loop_Starter_UP", "line": "COMMON_LOOP", "at_x": 700, "initial_state": "red" },
+    { "id": "Loop_Starter_SIDE", "name": "Loop_Starter", "line": "SIDE_LOOP", "at_x": 500, "initial_state": "red" }
+  ],
+  "block_boundaries": [
+    { "at_x": 0, "lines": ["UP_MAIN", "DN_MAIN"] },
+    { "at_x": 1200, "lines": ["UP_MAIN", "DN_MAIN"] }
+  ],
+  "sensor_zones": [
+    { "id": "TC_UP_ENTRY", "line": "UP_MAIN", "from_x": 0, "to_x": 400 },
+    { "id": "TC_UP_MID", "line": "UP_MAIN", "from_x": 400, "to_x": 800 },
+    { "id": "TC_UP_EXIT", "line": "UP_MAIN", "from_x": 800, "to_x": 1200 },
+    { "id": "TC_DN_ENTRY", "line": "DN_MAIN", "from_x": 800, "to_x": 1200 },
+    { "id": "TC_DN_MID", "line": "DN_MAIN", "from_x": 400, "to_x": 800 },
+    { "id": "TC_DN_EXIT", "line": "DN_MAIN", "from_x": 0, "to_x": 400 },
+    { "id": "TC_COMMON_LOOP", "line": "COMMON_LOOP", "from_x": 500, "to_x": 700 },
+    { "id": "TC_SIDE_LOOP", "line": "SIDE_LOOP", "from_x": 500, "to_x": 700 }
+  ],
+  "labels": [
+    { "text": "UP MAIN", "x": 10, "y": 140 },
+    { "text": "DN MAIN", "x": 10, "y": 270 }
+  ]
+}

@@ -1,238 +1,160 @@
 // components/StationYardLayout.tsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { SignalAspect, YardSchema } from "@/lib/yardlayout/schema";
+import { buildYardLayout, BuiltSegment } from "@/lib/yardlayout/builder";
+import { getYardSchema, SensorSnapshot } from "@/lib/api";
+import demoYard from "@/config/yards/demo_yard.json";
 
 type TrackStatus = "free" | "occupied" | "blocked";
 
 interface TrainState {
   id: string;
-  currentSegmentId: string;
-  progress: number; // Position on the segment (0.0 to 1.0)
-  speed: number; // Pixels per second
+  segmentId: string;
+  t: number; // position along the SVG path (0..1), in path coordinates
+  dir: 1 | -1; // traversal direction along the path
+  speed: number; // pixels per second
 }
 
-interface TrackSegment {
-  id: string;
-  d: string;
-  connectedTo: string[];
-  isBlock?: boolean;
+interface StationYardLayoutProps {
+  schema?: YardSchema;
+  stationId?: string;
+  sensorState?: SensorSnapshot;
+  signalOverrides?: Record<string, SignalAspect>;
+  statusOverrides?: Record<string, TrackStatus>;
 }
 
-interface Signal {
-  id: string;
-  connectedTo: string[]; // tracks it's linked to
-  state: "red" | "green" | "yellow";
-}
-
-// Extracts x,y coordinates from an SVG path string
-const getPathEndPoints = (d: string) => {
-  const matchStart = d.match(/M\s*([\d.]+)\s*([\d.]+)/);
-  const matchEnd = d.match(/L\s*([\d.]+)\s*([\d.]+)/g);
-  if (!matchStart || !matchEnd) return null;
-
-  const [x1, y1] = matchStart.slice(1).map(Number);
-  const [x2, y2] = matchEnd[matchEnd.length - 1]
-    .match(/([\d.]+)\s*([\d.]+)/)!
-    .slice(1)
-    .map(Number);
-
-  return { start: { x: x1, y: y1 }, end: { x: x2, y: y2 } };
+const parseEndpoints = (d: string) => {
+  const nums = d.match(/-?[\d.]+/g)!.map(Number);
+  return { sx: nums[0], sy: nums[1], ex: nums[2], ey: nums[3] };
 };
 
-const SIGNAL_CONFIG: Signal[] = [
-  {
-    id: "Outer_Warner_UP",
-    state: "green",
-    connectedTo: ["upMain_1", "upMain_2"],
-  },
-  { id: "Home_UP", state: "red", connectedTo: ["upMain_2", "upMain_3"] },
-  {
-    id: "Loop_Starter_DN",
-    state: "green",
-    connectedTo: ["upTurnout_1_Diverge", "commonLoop"],
-  },
-  {
-    id: "Loop_Starter_UP",
-    state: "red",
-    connectedTo: ["commonLoop", "upTurnout_2_Diverge"],
-  },
-  { id: "Starter_UP", state: "green", connectedTo: ["stopMainUP", "upMain_5"] },
-  { id: "Adv_Starter_UP", state: "red", connectedTo: ["upMain_6", "upMain_7"] },
+const TrainMarker = ({ train }: { train: TrainState }) => {
+  const ref = useRef<SVGGElement>(null);
 
-  {
-    id: "Outer_Warner_DN",
-    state: "red",
-    connectedTo: ["dnMain_2", "dnMain_1"],
-  },
-  {
-    id: "Home_DN",
-    state: "green",
-    connectedTo: ["dnMain_Turnout1_Straight", "dnMain_2"],
-  },
-  {
-    id: "Loop_Starter",
-    state: "red",
-    connectedTo: ["dnTurnout_1_Diverge", "sideLoop"],
-  },
-  { id: "Starter_DN", state: "green", connectedTo: ["dnMain_4", "stopMainDN"] },
-  { id: "Adv_Starter_DN", state: "red", connectedTo: ["dnMain_6", "dnMain_5"] },
-];
+  useEffect(() => {
+    const pathEl = document.getElementById(
+      train.segmentId
+    ) as SVGPathElement | null;
+    if (!pathEl || !ref.current) return;
+    const pt = pathEl.getPointAtLength(train.t * pathEl.getTotalLength());
+    ref.current.setAttribute("transform", `translate(${pt.x}, ${pt.y})`);
+  }, [train]);
 
-const LAYOUT_CONFIG: TrackSegment[] = [
-  // UP Main Line
-  {
-    id: "upMain_1",
-    d: "M 0 150 L 100 150",
-    connectedTo: ["upMain_2"],
-    isBlock: true,
-  },
-  { id: "upMain_2", d: "M 100 150 L 200 150", connectedTo: ["upMain_3"] },
-  {
-    id: "upMain_3",
-    d: "M 200 150 L 300 150",
-    connectedTo: ["upMain_Turnout1_Straight"],
-  },
-  { id: "upMain_4", d: "M 400 150 L 500 150", connectedTo: ["stopMainUP"] },
-  { id: "stopMainUP", d: "M 500 150 L 700 150", connectedTo: ["upMain5"] },
-  {
-    id: "upMain_5",
-    d: "M 700 150 L 800 150",
-    connectedTo: ["upMain_Turnout2_Straight"],
-  },
-  { id: "upMain_6", d: "M 900 150 L 1000 150", connectedTo: ["upMain_7"] },
-  { id: "upMain_7", d: "M 1000 150 L 1100 150", connectedTo: ["upMain_8"] },
-  {
-    id: "upMain_8",
-    d: "M 1100 150 L 1200 150",
-    connectedTo: [""],
-    isBlock: true,
-  },
-  // DN Main Line
-  {
-    id: "dnMain_6",
-    d: "M 0 250 L 100 250",
-    connectedTo: ["dnMain_5"],
-    isBlock: true,
-  },
-  {
-    id: "dnMain_5",
-    d: "M 100 250 L 200 250",
-    connectedTo: ["dnMain_Turnout2_Straight"],
-  },
-  { id: "dnMain_4", d: "M 400 250 L 500 250", connectedTo: ["stopMainDN"] },
-  { id: "stopMainDN", d: "M 500 250 L 700 250", connectedTo: ["dnMain_3"] },
-  {
-    id: "dnMain_3",
-    d: "M 700 250 L 800 250",
-    connectedTo: ["dnMain_Turnout1_Straight"],
-  },
-  {
-    id: "dnMain_2",
-    d: "M 1000 250 L 1100 250",
-    connectedTo: ["dnMain_Turnout1_Straight", "up_down_2_Diverge"],
-  },
-  {
-    id: "dnMain_1",
-    d: "M 1100 250 L 1200 250",
-    connectedTo: ["dnMain_2"],
-    isBlock: true,
-  },
-  // Loops
-  {
-    id: "commonLoop",
-    d: "M 500 70 L 700 70",
-    connectedTo: ["upTurnout_1_Diverge", "upTurnout_2_Diverge"],
-  }, //Common loop can handle both up and down
-  {
-    id: "sideLoop",
-    d: "M 500 330 L 700 330",
-    connectedTo: ["dnTurnout_1_Diverge", "dnTurnout_2_Diverge"],
-  },
-  // Turnouts
-  {
-    id: "upMain_Turnout1_Straight",
-    d: "M 300 150 L 400 150",
-    connectedTo: ["up_down_1_Diverge", "upTurnout_1_Diverge", "upMain_4"],
-  },
-  {
-    id: "upTurnout_1_Diverge",
-    d: "M 400 150 L 500 70",
-    connectedTo: ["commonLoop", "upMain_Turnout1_Straight"],
-  },
-  {
-    id: "upMain_Turnout2_Straight",
-    d: "M 800 150 L 900 150",
-    connectedTo: ["upTurnout_2_Diverge", "up_down_2_Diverge", "upMain_6"],
-  },
-  {
-    id: "upTurnout_2_Diverge",
-    d: "M 700 70 L 800 150",
-    connectedTo: ["commonLoop", "upMain_Turnout2_Straight"],
-  },
-  {
-    id: "dnMain_Turnout2_Straight",
-    d: "M 200 250 L 400 250",
-    connectedTo: ["dnMain_4"],
-  },
-  {
-    id: "dnTurnout_1_Diverge",
-    d: "M 400 250 L 500 330",
-    connectedTo: ["dnMain_1", "sideLoop"],
-  },
-  {
-    id: "dnMain_Turnout1_Straight",
-    d: "M 800 250 L 1000 250",
-    connectedTo: ["dnMain_2", "dnMain_3"],
-  },
-  {
-    id: "dnTurnout_2_Diverge",
-    d: "M 700 330 L 800 250",
-    connectedTo: ["sideLoop", "dnMain_3"],
-  },
-
-  {
-    id: "up_down_1_Diverge",
-    d: "M 200 250 L 300 150",
-    connectedTo: ["upMain_1", "commonLoop"],
-  },
-  {
-    id: "up_down_2_Diverge",
-    d: "M 1000 250 L 900 150",
-    connectedTo: ["upMain_1", "commonLoop"],
-  },
-];
-
-const getTrackElementById = (id: string) =>
-  LAYOUT_CONFIG.find((el) => el.id === id);
-
-const StationYardLayout = () => {
-  const [trains, setTrains] = useState<TrainState[]>([]);
-  const [trackStatus, setTrackStatus] = useState<Record<string, TrackStatus>>(
-    {}
+  return (
+    <g ref={ref}>
+      <circle r={4} fill="#f8fafc" stroke="#0f172a" strokeWidth={1.5} />
+      <rect x={-22} y={-24} width={44} height={13} rx={3} fill="#1e3a8a" stroke="#3b82f6" strokeWidth={0.75} />
+      <text
+        x={0}
+        y={-14}
+        textAnchor="middle"
+        fontSize="8.5"
+        fill="#e2e8f0"
+        fontFamily="sans-serif"
+      >
+        {train.id}
+      </text>
+    </g>
   );
+};
+
+const StationYardLayout = ({
+  schema,
+  stationId = "demo_yard",
+  sensorState,
+  signalOverrides,
+  statusOverrides,
+}: StationYardLayoutProps) => {
+  const [fetchedSchema, setFetchedSchema] = useState<YardSchema | null>(null);
+
+  useEffect(() => {
+    if (schema) return;
+    let cancelled = false;
+    getYardSchema(stationId)
+      .then((data) => {
+        if (!cancelled) setFetchedSchema(data);
+      })
+      .catch(() => {
+        // Backend unreachable or station unknown — fall back to bundled demo layout
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [schema, stationId]);
+
+  const yard = useMemo(
+    () => buildYardLayout(schema ?? fetchedSchema ?? (demoYard as YardSchema)),
+    [schema, fetchedSchema]
+  );
+
+  const segmentById = useMemo(
+    () => new Map(yard.segments.map((s) => [s.id, s])),
+    [yard]
+  );
+
+  const signals = useMemo(
+    () =>
+      yard.signals.map((s) => ({
+        ...s,
+        state: signalOverrides?.[s.id] ?? sensorState?.signals[s.id] ?? s.state,
+      })),
+    [yard, signalOverrides, sensorState]
+  );
+
+  // Sensor zones reported occupied by the backend → mark their slices occupied
+  const sensorStatusOverrides = useMemo(() => {
+    if (!sensorState) return undefined;
+    const overrides: Record<string, TrackStatus> = {};
+    for (const zone of yard.zones) {
+      if (sensorState.zones[zone.id]) {
+        zone.segmentIds.forEach((id) => {
+          overrides[id] = "occupied";
+        });
+      }
+    }
+    return overrides;
+  }, [sensorState, yard]);
+
+  const [trains, setTrains] = useState<TrainState[]>([]);
   const lastUpdateTimeRef = useRef<number>(0);
 
-  // Initialize simulation
-  // useEffect(() => {
-  //   setTrains([
-  //     { id: "T12926", currentSegmentId: "upMain_1", progress: 0, speed: 30 },
-  //     { id: "T90302", currentSegmentId: "dnMain_3", progress: 0, speed: 30 },
-  //   ]);
-  //   lastUpdateTimeRef.current = performance.now();
-  // }, []);
-
-  // Derive track status from train positions
+  // Spawn demo trains at the entry slices of the first UP and DN lines
   useEffect(() => {
-    const newStatus: Record<string, TrackStatus> = {};
-    LAYOUT_CONFIG.forEach((el) => {
-      newStatus[el.id] = "free";
+    const lineSlices = (lineId: string) =>
+      yard.segments.filter((s) => s.lineId === lineId);
+
+    const upLine = yard.segments.find((s) => s.direction === "UP")?.lineId;
+    const dnLine = yard.segments.find((s) => s.direction === "DN")?.lineId;
+
+    const init: TrainState[] = [];
+    if (upLine) {
+      const entry = lineSlices(upLine)[0];
+      if (entry)
+        init.push({ id: "T12926", segmentId: entry.id, t: 0, dir: 1, speed: 45 });
+    }
+    if (dnLine) {
+      const slices = lineSlices(dnLine);
+      const entry = slices[slices.length - 1];
+      if (entry)
+        init.push({ id: "T90302", segmentId: entry.id, t: 1, dir: -1, speed: 35 });
+    }
+    setTrains(init);
+    lastUpdateTimeRef.current = performance.now();
+  }, [yard]);
+
+  // Track status: derived from train positions, then sensor + manual overrides applied
+  const trackStatus = useMemo(() => {
+    const status: Record<string, TrackStatus> = {};
+    yard.segments.forEach((el) => {
+      status[el.id] = "free";
     });
     trains.forEach((train) => {
-      newStatus[train.currentSegmentId] = "occupied";
+      status[train.segmentId] = "occupied";
     });
-    setTrackStatus(newStatus);
-  }, [trains]);
+    return { ...status, ...sensorStatusOverrides, ...statusOverrides };
+  }, [trains, yard, sensorStatusOverrides, statusOverrides]);
 
   // Main Animation Loop
   useEffect(() => {
@@ -243,45 +165,68 @@ const StationYardLayout = () => {
       lastUpdateTimeRef.current = timestamp;
 
       setTrains((currentTrains) => {
-        const occupiedSegments = new Set(
-          currentTrains.map((t) => t.currentSegmentId)
+        const occupiedBy = new Map(
+          currentTrains.map((t) => [t.segmentId, t.id] as const)
         );
 
         return currentTrains.map((train) => {
-          const segmentElement = document.getElementById(
-            train.currentSegmentId
+          const segment = segmentById.get(train.segmentId);
+          const pathEl = document.getElementById(
+            train.segmentId
           ) as SVGPathElement | null;
-          if (!segmentElement) return train;
+          if (!segment || !pathEl) return train;
 
-          const segmentLength = segmentElement.getTotalLength();
-          const distanceToTravel = train.speed * deltaTime;
-          const newProgress = train.progress + distanceToTravel / segmentLength;
+          const length = pathEl.getTotalLength();
+          const t = train.t + (train.dir * train.speed * deltaTime) / length;
 
-          // If train finishes segment, find the next one
-          if (newProgress >= 1) {
-            const currentSegmentConfig = getTrackElementById(
-              train.currentSegmentId
-            );
-            if (!currentSegmentConfig) return train;
-
-            const availableNextSegments =
-              currentSegmentConfig.connectedTo.filter(
-                (id) => !occupiedSegments.has(id)
-              );
-
-            if (availableNextSegments.length > 0) {
-              const nextSegmentId =
-                availableNextSegments[
-                  Math.floor(Math.random() * availableNextSegments.length)
-                ];
-              return { ...train, currentSegmentId: nextSegmentId, progress: 0 };
-            } else {
-              // No path available, stop at the end of the segment
-              return { ...train, progress: 1 };
-            }
+          if (t <= 1 && t >= 0) {
+            return { ...train, t };
           }
 
-          return { ...train, progress: newProgress };
+          // Reached an endpoint of the current segment
+          const clamped = train.dir === 1 ? 1 : 0;
+          const ep = parseEndpoints(segment.d);
+          const exitX = train.dir === 1 ? ep.ex : ep.sx;
+          const exitY = train.dir === 1 ? ep.ey : ep.sy;
+
+          // Hold at a red signal guarding this exit (line segments only)
+          const guardingRed = signals.find(
+            (s) => s.lineId === segment.lineId && s.x === exitX && s.state === "red"
+          );
+          if (guardingRed) {
+            return { ...train, t: clamped };
+          }
+
+          // Pick a connected, unoccupied segment sharing this endpoint
+          type Candidate = { segment: BuiltSegment; t: number; dir: 1 | -1 };
+          const candidates: Candidate[] = segment.connectedTo
+            .map((id) => segmentById.get(id))
+            .filter((ns): ns is BuiltSegment => {
+              if (!ns) return false;
+              const owner = occupiedBy.get(ns.id);
+              return !owner || owner === train.id;
+            })
+            .flatMap((ns): Candidate[] => {
+              const nep = parseEndpoints(ns.d);
+              if (nep.sx === exitX && nep.sy === exitY)
+                return [{ segment: ns, t: 0, dir: 1 }];
+              if (nep.ex === exitX && nep.ey === exitY)
+                return [{ segment: ns, t: 1, dir: -1 }];
+              return [];
+            });
+
+          if (candidates.length === 0) {
+            return { ...train, t: clamped };
+          }
+
+          const pick =
+            candidates[Math.floor(Math.random() * candidates.length)];
+          return {
+            ...train,
+            segmentId: pick.segment.id,
+            t: pick.t,
+            dir: pick.dir,
+          };
         });
       });
 
@@ -290,7 +235,7 @@ const StationYardLayout = () => {
 
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
-  }, []);
+  }, [segmentById, signals]);
 
   const colorMap: Record<TrackStatus, string> = {
     free: "#22c55e",
@@ -318,28 +263,15 @@ const StationYardLayout = () => {
       </div>
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <svg viewBox="0 0 1200 408" className="min-w-[720px] w-full h-full rounded-md">
-          {SIGNAL_CONFIG.map((signal) => {
-          const [t1, t2] = signal.connectedTo.map((id) =>
-            LAYOUT_CONFIG.find((t) => t.id === id)
-          );
-          if (!t1 || !t2) return null;
-
-          const p1 = getPathEndPoints(t1.d);
-          const p2 = getPathEndPoints(t2.d);
-          if (!p1 || !p2) return null;
-
-          // Find the join (end of first track)
-          const joinX = p1.end.x;
-          const joinY = p1.end.y;
-
+        <svg viewBox={yard.viewBox} className="min-w-[720px] w-full h-full rounded-md">
+          {signals.map((signal) => {
           const poleHeight = 40; // total signal height
           const bodyHeight = 28; // box size
 
           return (
             <g
               key={signal.id}
-              transform={`translate(${joinX}, ${joinY - poleHeight})`}
+              transform={`translate(${signal.x}, ${signal.y - poleHeight})`}
             >
               {/* Rod — bottom touches track */}
               <line
@@ -394,7 +326,7 @@ const StationYardLayout = () => {
                 fill="#aaa"
                 fontFamily="sans-serif"
               >
-                {signal.id}
+                {signal.name}
               </text>
             </g>
           );
@@ -402,7 +334,7 @@ const StationYardLayout = () => {
 
           <g>
             {/* Layer 1: Base Tracks (with unique IDs for animation) */}
-            {LAYOUT_CONFIG.map((segment) => (
+            {yard.segments.map((segment) => (
               <path
                 id={segment.id} // IMPORTANT: ID is needed for getElementById
                 key={segment.id}
@@ -419,31 +351,22 @@ const StationYardLayout = () => {
               />
             ))}
 
-            {/* Layer 2: Render the animated trains
+            {/* Layer 2: Animated trains */}
             {trains.map((train) => (
-              <Train
-                key={train.id}
-                trainId={train.id}
-                segmentId={train.currentSegmentId}
-                progress={train.progress}
-              />
-            ))} */}
+              <TrainMarker key={train.id} train={train} />
+            ))}
 
             {/* Labels */}
-            <text
-              x="10"
-              y="140"
-              className="text-xs font-sans font-semibold fill-gray-100"
-            >
-              UP MAIN
-            </text>
-            <text
-              x="10"
-              y="270"
-              className="text-xs font-sans font-semibold fill-gray-100"
-            >
-              DN MAIN
-            </text>
+            {yard.labels.map((label) => (
+              <text
+                key={`${label.text}-${label.x}-${label.y}`}
+                x={label.x}
+                y={label.y}
+                className="text-xs font-sans font-semibold fill-gray-100"
+              >
+                {label.text}
+              </text>
+            ))}
           </g>
         </svg>
       </div>

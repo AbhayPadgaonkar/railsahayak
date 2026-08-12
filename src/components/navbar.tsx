@@ -2,17 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Clock } from "lucide-react"; // Import a clock icon
+import { useRouter } from "next/navigation";
+import { Clock, LogOut } from "lucide-react";
+import { AuthSession, getSession, logout } from "@/lib/auth";
 
 export default function Navbar() {
-  // 1. State for the current time (no changes here)
+  const router = useRouter();
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
-    // 2. Set the *actual* time only on the client.
+    setSession(getSession());
     setCurrentTime(new Date());
 
-    // 3. Your interval logic is perfect and updates the time.
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -20,7 +22,12 @@ export default function Navbar() {
     return () => {
       clearInterval(timer);
     };
-  }, []); // Empty array ensures this runs only on the client, after mount.
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/login");
+  };
 
   // Formatting options for the time (no changes here)
   const timeFormatOptions: Intl.DateTimeFormatOptions = {
@@ -48,7 +55,9 @@ export default function Navbar() {
       <div className="flex items-center gap-6 text-sm">
         <div className="flex items-center gap-2">
           <span className="text-slate-400">Section:</span>
-          <span className="font-medium text-slate-100">VR-BL</span>
+          <span className="font-medium text-slate-100">
+            {session?.section ?? "—"}
+          </span>
         </div>
 
         {/* A subtle vertical separator */}
@@ -56,18 +65,29 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           <span className="text-slate-400">Controller:</span>
-          <span className="font-medium text-slate-100">Full Name - ID</span>
+          <span className="font-medium text-slate-100">
+            {session ? `${session.name} - ${session.controller_id}` : "—"}
+          </span>
         </div>
       </div>
 
-      {/* Right Side: Live Clock */}
-      <div className="flex items-center gap-2 text-slate-200">
-        <Clock className="h-4 w-4 text-sky-400" />
-        <div className="font-mono text-base tracking-wider">
-          {currentTime
-            ? currentTime.toLocaleString("en-GB", timeFormatOptions)
-            : null}
+      {/* Right Side: Live Clock + Logout */}
+      <div className="flex items-center gap-4 text-slate-200">
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-sky-400" />
+          <div className="font-mono text-base tracking-wider">
+            {currentTime
+              ? currentTime.toLocaleString("en-GB", timeFormatOptions)
+              : null}
+          </div>
         </div>
+        <button
+          onClick={handleLogout}
+          title="Sign out"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
       </div>
     </div>
   );

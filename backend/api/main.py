@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -9,6 +10,8 @@ from backend.rules.emergency import emergency_mode_decision
 from backend.rules.turnouts import check_turnout_conflict
 
 from backend.api.sensors_api import router as sensor_router
+from backend.api.yard_api import router as yard_router
+from backend.api.auth_api import router as auth_router
 from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
 from backend.services.route_service import RouteService
@@ -21,7 +24,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(sensor_router)
+app.include_router(yard_router)
+app.include_router(auth_router)
 
 
 class Gradient(BaseModel):

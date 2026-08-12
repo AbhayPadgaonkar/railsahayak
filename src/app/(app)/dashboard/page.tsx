@@ -1,9 +1,9 @@
-import StationYardLayout from '@/components/stationyardlayout';
+import YardLive from '@/components/yardlive';
 
 export default function Home() {
   return (
     <main className="overflow-hidden h-full w-full ">
-      <StationYardLayout />
+      <YardLive />
     </main>
   );
 }
