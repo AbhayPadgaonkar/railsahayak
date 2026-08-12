@@ -244,7 +244,7 @@ const StationYardLayout = ({
   };
 
   return (
-    <div className="pt-1 border bg-gray-950 border-gray-700 w-full h-full min-h-[360px] lg:min-h-[420px] mx-auto flex flex-col">
+    <div className="pt-1 border bg-gray-950 border-gray-700 w-full h-full min-h-[300px] lg:min-h-[360px] mx-auto flex flex-col">
       <div className="flex justify-start pl-2.5 items-start gap-8 mb-1">
         <div className="flex items-center gap-3">
           <div
