@@ -38,8 +38,11 @@ API:
 - `POST /decision` - decision + optimization output
 - `POST /login` / `GET /me` / `POST /logout` - controller auth (demo credentials in `backend/config/users.json`)
 - `GET /sensors` - sensor snapshot
+- `GET /yards` - list available yard layouts
 - `GET /yard/{station_id}` - yard layout schema (drives the dynamic yard map; add `<station>.json` under `backend/config/yards/`)
 - `GET /health` - health check
+
+Multi-yard: dashboard picks a station via `?station=<id>` (e.g. `/dashboard?station=vangaon_road`) or the station dropdown. Each `<station>.json` fully defines the yard — lines, turnouts, signals, sensor zones.
 
 ### 2) WebSocket Comms Relay
 

@@ -165,25 +165,25 @@ export default function CommunicationGateway() {
   };
 
   return (
-    <aside className="bg-gray-800 text-gray-300 w-full lg:w-96 p-4 flex flex-col flex-shrink-0 border-l border-gray-700 h-full max-h-[40vh] lg:max-h-none">
+    <aside className="bg-gray-800 text-gray-300 w-full lg:w-96 p-2.5 flex flex-col flex-shrink-0 border-l border-gray-700 h-full max-h-[40vh] lg:max-h-none">
       {/* Header with Dropdown */}
-      <div className="flex justify-between items-center mb-4 px-2 flex-shrink-0">
+      <div className="flex justify-between items-center mb-2 px-1 flex-shrink-0">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-base font-bold text-white tracking-tight">
             Communication
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-[11px] text-gray-400">
             {selfController.section} • {connectionStatus}
           </p>
         </div>
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-300 bg-gray-700/50 hover:bg-gray-700 px-3 py-1 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-300 bg-gray-700/50 hover:bg-gray-700 px-2.5 py-1 rounded-lg transition-colors"
           >
             <span>{selectedController?.name || "Select Controller"}</span>
             <ChevronDown
-              size={16}
+              size={14}
               className={`transition-transform duration-200 ${
                 isOpen ? "rotate-180" : ""
               }`}
@@ -237,13 +237,13 @@ export default function CommunicationGateway() {
       </div>
 
       {/* Chat Interface */}
-      <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-3 flex flex-col flex-grow min-h-60">
-        <h3 className="text-sm font-semibold text-gray-200 mb-3 flex-shrink-0">
+      <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-2 flex flex-col flex-grow min-h-40">
+        <h3 className="text-xs font-semibold text-gray-200 mb-1.5 flex-shrink-0">
           {selectedController
             ? `Chat with ${selectedController.section} (${selectedController.name})`
             : "Select a controller to start"}
         </h3>
-        <div className="flex-grow space-y-3 text-sm overflow-y-auto pr-2 mb-3">
+        <div className="flex-grow space-y-1.5 text-[11px] overflow-y-auto pr-1.5 mb-1.5">
           {(selectedController
             ? messagesByController[selectedController.controller_id]
             : [])?.map((chat: ChatMessage, index: number) => (
@@ -254,7 +254,7 @@ export default function CommunicationGateway() {
               }`}
             >
               <p
-                className={`p-2 rounded-lg inline-block ${
+                className={`p-1.5 rounded-lg inline-block ${
                   chat.from === "me"
                     ? "bg-blue-600/50"
                     : chat.from === "system"
@@ -267,7 +267,7 @@ export default function CommunicationGateway() {
             </div>
           ))}
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <input
             type="text"
             placeholder="Type a message..."
@@ -278,13 +278,13 @@ export default function CommunicationGateway() {
                 handleSend();
               }
             }}
-            className="flex-grow bg-gray-700 border border-gray-600 text-gray-200 text-sm rounded-lg p-2 focus:ring-sky-500 focus:border-sky-500"
+            className="flex-grow bg-gray-700 border border-gray-600 text-gray-200 text-xs rounded-lg px-2 py-1.5 focus:ring-sky-500 focus:border-sky-500 outline-none"
           />
           <button
             onClick={handleSend}
-            className="p-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white transition-colors"
+            className="p-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white transition-colors"
           >
-            <SendHorizontal size={18} />
+            <SendHorizontal size={16} />
           </button>
         </div>
       </div>
