@@ -1,0 +1,44 @@
+{
+  "station_id": "vangaon_road",
+  "station_name": "Vangaon Road (VR)",
+  "canvas": { "width": 1000, "height": 408 },
+  "lines": [
+    { "id": "UP_MAIN", "y": 150, "direction": "UP", "from_x": 0, "to_x": 1000 },
+    { "id": "DN_MAIN", "y": 250, "direction": "DN", "from_x": 0, "to_x": 1000 },
+    { "id": "PASSING_LOOP", "y": 70, "direction": "COMMON", "from_x": 250, "to_x": 750 }
+  ],
+  "turnouts": [
+    { "id": "T1", "from_line": "UP_MAIN", "from_x": 450, "to_line": "PASSING_LOOP", "to_x": 500 },
+    { "id": "T2", "from_line": "PASSING_LOOP", "from_x": 700, "to_line": "UP_MAIN", "to_x": 800 }
+  ],
+  "signals": [
+    { "id": "Outer_Warner_UP", "line": "UP_MAIN", "at_x": 100, "initial_state": "green" },
+    { "id": "Home_UP", "line": "UP_MAIN", "at_x": 250, "initial_state": "red" },
+    { "id": "Starter_UP", "line": "UP_MAIN", "at_x": 800, "initial_state": "green" },
+    { "id": "Adv_Starter_UP", "line": "UP_MAIN", "at_x": 900, "initial_state": "red" },
+    { "id": "Loop_Starter_ENTRY", "name": "Loop Starter", "line": "PASSING_LOOP", "at_x": 500, "initial_state": "red" },
+    { "id": "Loop_Starter_EXIT", "name": "Loop Exit", "line": "PASSING_LOOP", "at_x": 700, "initial_state": "green" },
+    { "id": "Outer_Warner_DN", "line": "DN_MAIN", "at_x": 900, "initial_state": "red" },
+    { "id": "Home_DN", "line": "DN_MAIN", "at_x": 750, "initial_state": "green" },
+    { "id": "Starter_DN", "line": "DN_MAIN", "at_x": 450, "initial_state": "green" },
+    { "id": "Adv_Starter_DN", "line": "DN_MAIN", "at_x": 100, "initial_state": "red" }
+  ],
+  "block_boundaries": [
+    { "at_x": 0, "lines": ["UP_MAIN", "DN_MAIN"] },
+    { "at_x": 1000, "lines": ["UP_MAIN", "DN_MAIN"] }
+  ],
+  "sensor_zones": [
+    { "id": "TC_UP_ENTRY", "line": "UP_MAIN", "from_x": 0, "to_x": 450 },
+    { "id": "TC_UP_MID", "line": "UP_MAIN", "from_x": 450, "to_x": 800 },
+    { "id": "TC_UP_EXIT", "line": "UP_MAIN", "from_x": 800, "to_x": 1000 },
+    { "id": "TC_DN_ENTRY", "line": "DN_MAIN", "from_x": 800, "to_x": 1000 },
+    { "id": "TC_DN_MID", "line": "DN_MAIN", "from_x": 400, "to_x": 800 },
+    { "id": "TC_DN_EXIT", "line": "DN_MAIN", "from_x": 0, "to_x": 400 },
+    { "id": "TC_PASSING_LOOP", "line": "PASSING_LOOP", "from_x": 250, "to_x": 750 }
+  ],
+  "labels": [
+    { "text": "UP MAIN", "x": 10, "y": 140 },
+    { "text": "DN MAIN", "x": 10, "y": 270 },
+    { "text": "PASSING LOOP", "x": 250, "y": 60 }
+  ]
+}
