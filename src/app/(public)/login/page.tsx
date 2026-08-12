@@ -30,6 +30,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-slate-100 flex items-center justify-center px-6">
+      <div className="fixed top-0 left-0 right-0 flex h-1.5">
+        <div className="flex-1 bg-orange-500" />
+        <div className="flex-1 bg-slate-100" />
+        <div className="flex-1 bg-emerald-600" />
+      </div>
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <Link href="/">
