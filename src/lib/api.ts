@@ -36,3 +36,68 @@ export async function getSensorSnapshot(): Promise<SensorSnapshot> {
   }
   return res.json();
 }
+
+export interface Gradient {
+  value: number;
+  direction: "UP" | "DOWN";
+}
+
+export interface TrainRequest {
+  train_id: string;
+  train_type: string;
+  block_id: string;
+  line_id: string;
+  next_block_id?: string | null;
+  signal_state: string;
+  sectional_speed: number;
+  scheduled_time: number;
+  current_time: number;
+  gradient?: Gradient | null;
+  condition?: string | null;
+  has_written_authority: boolean;
+}
+
+export interface SystemContext {
+  occupied_lines: string[];
+  occupied_turnouts: string[];
+  fouling_segments: string[];
+  disaster_active: boolean;
+}
+
+export interface DecisionRequest {
+  trains: TrainRequest[];
+  context: SystemContext;
+}
+
+export interface DecisionResponse {
+  train_id: string;
+  allow_movement: boolean;
+  allowed_actions: string[];
+  max_speed: number | null;
+  reasons: string[];
+}
+
+export interface OptimizedOrder {
+  train_id: string;
+  order: number;
+}
+
+export interface DecisionResult {
+  decisions: DecisionResponse[];
+  optimized_order: OptimizedOrder[] | null;
+}
+
+export async function getDecision(
+  payload: DecisionRequest
+): Promise<DecisionResult> {
+  const res = await fetch(`${API_URL}/decision`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Decision request failed (${res.status})`);
+  }
+  return res.json();
+}

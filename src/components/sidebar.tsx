@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Siren, GitPullRequestArrow, FileClock } from "lucide-react";
+import { Siren, GitPullRequestArrow, FileClock, TrainFront } from "lucide-react";
 import { BotMessageSquare } from "lucide-react";
 import { ChartColumn } from "lucide-react";
 import { MapPinned } from "lucide-react";
@@ -28,6 +28,19 @@ export default function Sidebar() {
             >
               <MapPinned className="w-5 h-5" />
               <span>Live Map</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/train-management"
+              className={`flex items-center gap-3 py-2 px-3 rounded-lg transition-colors duration-200 ${
+                pathname === "/train-management"
+                  ? "bg-sky-600 text-white"
+                  : "hover:bg-sky-600 hover:text-white"
+              } whitespace-nowrap`}
+            >
+              <TrainFront className="w-5 h-5" />
+              <span>Train Management</span>
             </Link>
           </li>
           <li>
