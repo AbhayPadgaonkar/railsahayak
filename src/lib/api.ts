@@ -80,6 +80,7 @@ export interface DecisionResponse {
 export interface OptimizedOrder {
   train_id: string;
   order: number;
+  reason?: string;
 }
 
 export interface DecisionResult {
