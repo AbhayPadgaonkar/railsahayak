@@ -1,9 +1,11 @@
 import {
   LineDirection,
   SignalAspect,
+  YardBlock,
   YardLabel,
   YardLine,
   YardSchema,
+  YardSection,
 } from "./schema";
 
 export interface BuiltSegment {
@@ -28,7 +30,22 @@ export interface BuiltSignal {
 export interface BuiltZone {
   id: string;
   lineId: string;
+  blockId?: string;
   segmentIds: string[];
+}
+
+export interface BuiltLine {
+  id: string;
+  y: number;
+  direction: LineDirection;
+  from_x: number;
+  to_x: number;
+}
+
+export interface BuiltBlock {
+  id: string;
+  next_blocks: string[];
+  spans: { lineId: string; from_x: number; to_x: number }[];
 }
 
 export interface BuiltYard {
@@ -38,6 +55,8 @@ export interface BuiltYard {
   segments: BuiltSegment[];
   signals: BuiltSignal[];
   zones: BuiltZone[];
+  lines: BuiltLine[];
+  blocks: BuiltBlock[];
   labels: YardLabel[];
 }
 
@@ -93,27 +112,87 @@ function validate(schema: YardSchema): void {
     }
   }
 
-  for (const b of schema.block_boundaries ?? []) {
-    for (const lineId of b.lines) {
-      const line = requireLine(lineId, `Block boundary at x=${b.at_x}`);
-      if (!within(b.at_x, line)) {
-        throw new Error(`Block boundary at x=${b.at_x} is outside line "${lineId}"`);
+  const blockIds = new Set<string>();
+  const blockById = new Map<string, YardBlock>();
+  if (!schema.blocks?.length) {
+    throw new Error("Yard must define at least one block");
+  }
+  for (const b of schema.blocks) {
+    if (blockIds.has(b.id)) {
+      throw new Error(`Duplicate block id "${b.id}"`);
+    }
+    blockIds.add(b.id);
+    blockById.set(b.id, b);
+    if (!b.lines?.length) {
+      throw new Error(`Block "${b.id}" has no line spans`);
+    }
+    for (const span of b.lines) {
+      const line = requireLine(span.line, `Block "${b.id}" span`);
+      if (span.from_x >= span.to_x) {
+        throw new Error(`Block "${b.id}" span on "${span.line}" has zero or negative length`);
+      }
+      if (!within(span.from_x, line) || !within(span.to_x, line)) {
+        throw new Error(`Block "${b.id}" span on "${span.line}" is outside the line`);
+      }
+    }
+    for (const nb of b.next_blocks ?? []) {
+      if (!blockIds.has(nb) && nb !== b.id) {
+        throw new Error(`Block "${b.id}" next_blocks references unknown block "${nb}"`);
       }
     }
   }
 
-  const zoneIds = new Set<string>();
-  for (const z of schema.sensor_zones ?? []) {
-    if (zoneIds.has(z.id)) {
-      throw new Error(`Duplicate sensor zone id "${z.id}"`);
+  const sectionIds = new Set<string>();
+  for (const z of schema.sections ?? []) {
+    if (sectionIds.has(z.id)) {
+      throw new Error(`Duplicate section id "${z.id}"`);
     }
-    zoneIds.add(z.id);
-    const line = requireLine(z.line, `Sensor zone "${z.id}"`);
+    sectionIds.add(z.id);
+    const line = requireLine(z.line, `Section "${z.id}"`);
     if (z.from_x >= z.to_x) {
-      throw new Error(`Sensor zone "${z.id}" has zero or negative length`);
+      throw new Error(`Section "${z.id}" has zero or negative length`);
     }
     if (!within(z.from_x, line) || !within(z.to_x, line)) {
-      throw new Error(`Sensor zone "${z.id}" range is outside line "${z.line}"`);
+      throw new Error(`Section "${z.id}" range is outside line "${z.line}"`);
+    }
+    const block = blockById.get(z.block);
+    if (!block) {
+      throw new Error(`Section "${z.id}" references unknown block "${z.block}"`);
+    }
+    const span = block.lines.find((s) => s.line === z.line);
+    if (!span) {
+      throw new Error(`Section "${z.id}" block "${z.block}" has no span on line "${z.line}"`);
+    }
+    if (z.from_x < span.from_x || z.to_x > span.to_x) {
+      throw new Error(`Section "${z.id}" extends beyond block "${z.block}" span on "${z.line}"`);
+    }
+  }
+
+  // Tiling invariant: each (block, line) span must be exactly covered by non-overlapping sections
+  const sectionsBySpan = new Map<string, YardSection[]>();
+  for (const z of schema.sections ?? []) {
+    const key = `${z.block}|${z.line}`;
+    sectionsBySpan.set(key, [...(sectionsBySpan.get(key) ?? []), z]);
+  }
+  for (const b of schema.blocks) {
+    for (const span of b.lines) {
+      const parts = sectionsBySpan.get(`${b.id}|${span.line}`) ?? [];
+      const sorted = [...parts].sort((a, b) => a.from_x - b.from_x);
+      let cursor = span.from_x;
+      for (const part of sorted) {
+        if (part.from_x < cursor) {
+          throw new Error(`Sections overlap for block "${b.id}" on "${span.line}"`);
+        }
+        if (part.from_x > cursor) {
+          throw new Error(`Gap in section coverage for block "${b.id}" on "${span.line}" (missing x=${cursor})`);
+        }
+        cursor = part.to_x;
+      }
+      if (cursor !== span.to_x) {
+        throw new Error(
+          `Incomplete section coverage for block "${b.id}" on "${span.line}" (ends at ${cursor}, expected ${span.to_x})`
+        );
+      }
     }
   }
 }
@@ -149,8 +228,19 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
     for (const s of schema.signals) {
       if (s.line === line.id) anchors.add(s.at_x);
     }
-    for (const b of schema.block_boundaries ?? []) {
-      if (b.lines.includes(line.id)) anchors.add(b.at_x);
+    for (const b of schema.blocks) {
+      for (const span of b.lines) {
+        if (span.line === line.id) {
+          anchors.add(span.from_x);
+          anchors.add(span.to_x);
+        }
+      }
+    }
+    for (const z of schema.sections ?? []) {
+      if (z.line === line.id) {
+        anchors.add(z.from_x);
+        anchors.add(z.to_x);
+      }
     }
 
     const sorted = [...anchors].sort((a, b) => a - b);
@@ -161,8 +251,10 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
       const x2 = sorted[i + 1];
       if (x1 === x2) continue;
 
-      const isBlock = (schema.block_boundaries ?? []).some(
-        (b) => b.lines.includes(line.id) && (b.at_x === x1 || b.at_x === x2)
+      const inBlock = schema.blocks.some((b) =>
+        b.lines.some(
+          (s) => s.line === line.id && x1 >= s.from_x && x2 <= s.to_x
+        )
       );
 
       const seg: BuiltSegment = {
@@ -171,7 +263,7 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
         connectedTo: [],
         lineId: line.id,
         direction: line.direction,
-        ...(isBlock ? { isBlock: true } : {}),
+        ...(inBlock ? { isBlock: true } : {}),
       };
       addSegment(seg);
       slices.push(seg);
@@ -228,14 +320,14 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
     };
   });
 
-  const zones: BuiltZone[] = (schema.sensor_zones ?? []).map((z) => {
+  const zones: BuiltZone[] = (schema.sections ?? []).map((z) => {
     const segmentIds = (lineSlices.get(z.line) ?? [])
       .filter((seg) => {
         const nums = seg.d.match(/-?[\d.]+/g)!.map(Number);
         return nums[0] < z.to_x && nums[2] > z.from_x;
       })
       .map((seg) => seg.id);
-    return { id: z.id, lineId: z.line, segmentIds };
+    return { id: z.id, lineId: z.line, blockId: z.block, segmentIds };
   });
 
   return {
@@ -245,6 +337,22 @@ export function buildYardLayout(schema: YardSchema): BuiltYard {
     segments,
     signals,
     zones,
+    lines: schema.lines.map((l) => ({
+      id: l.id,
+      y: l.y,
+      direction: l.direction,
+      from_x: l.from_x,
+      to_x: l.to_x,
+    })),
+    blocks: schema.blocks.map((b) => ({
+      id: b.id,
+      next_blocks: b.next_blocks ?? [],
+      spans: b.lines.map((s) => ({
+        lineId: s.line,
+        from_x: s.from_x,
+        to_x: s.to_x,
+      })),
+    })),
     labels: schema.labels ?? [],
   };
 }

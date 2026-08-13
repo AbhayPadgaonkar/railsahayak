@@ -13,7 +13,7 @@ YARDS_DIR = Path(__file__).resolve().parent.parent / "config" / "yards"
 DWELL_SECONDS = 20
 
 SIM_ROUTES = [
-    ["TC_UP_ENTRY", "TC_UP_MID", "TC_UP_EXIT"],
+    ["TC_UP_ENTRY", "TC_UP_ADV", "TC_UP_EXIT"],
     ["TC_DN_ENTRY", "TC_DN_MID", "TC_DN_EXIT"],
 ]
 
@@ -44,20 +44,20 @@ def get_sensor_snapshot():
     occupied = _occupied_zones(time.monotonic())
 
     zones = {
-        zone["id"]: zone["id"] in occupied
-        for zone in yard.get("sensor_zones", [])
+        section["id"]: section["id"] in occupied
+        for section in yard.get("sections", [])
     }
 
-    def zone_containing(line_id: str, x: float):
-        for zone in yard.get("sensor_zones", []):
-            if zone["line"] == line_id and zone["from_x"] <= x <= zone["to_x"]:
-                return zone["id"]
+    def section_containing(line_id: str, x: float):
+        for section in yard.get("sections", []):
+            if section["line"] == line_id and section["from_x"] <= x <= section["to_x"]:
+                return section["id"]
         return None
 
     signals = {}
     for signal in yard.get("signals", []):
-        zone_id = zone_containing(signal["line"], signal["at_x"])
-        signals[signal["id"]] = "red" if zone_id in occupied else "green"
+        section_id = section_containing(signal["line"], signal["at_x"])
+        signals[signal["id"]] = "red" if section_id in occupied else "green"
 
     return {
         "station_id": yard["station_id"],
