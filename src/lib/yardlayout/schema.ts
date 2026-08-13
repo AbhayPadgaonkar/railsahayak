@@ -31,16 +31,24 @@ export interface YardSignal {
   initial_state: SignalAspect;
 }
 
-export interface YardBlockBoundary {
-  at_x: number;
-  lines: string[];
+export interface YardBlockSpan {
+  line: string;
+  from_x: number;
+  to_x: number;
 }
 
-export interface YardSensorZone {
+export interface YardBlock {
+  id: string;
+  next_blocks?: string[];
+  lines: YardBlockSpan[];
+}
+
+export interface YardSection {
   id: string;
   line: string;
   from_x: number;
   to_x: number;
+  block: string;
 }
 
 export interface YardLabel {
@@ -56,7 +64,7 @@ export interface YardSchema {
   lines: YardLine[];
   turnouts: YardTurnout[];
   signals: YardSignal[];
-  block_boundaries?: YardBlockBoundary[];
-  sensor_zones?: YardSensorZone[];
+  blocks: YardBlock[];
+  sections?: YardSection[];
   labels?: YardLabel[];
 }

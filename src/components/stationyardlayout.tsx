@@ -30,16 +30,6 @@ const parseEndpoints = (d: string) => {
   return { sx: nums[0], sy: nums[1], ex: nums[2], ey: nums[3] };
 };
 
-// Decision-engine block → horizontal fraction along a yard line
-const BLOCK_X: Record<string, number> = { A_B: 0.15, B_C: 0.5, C_D: 0.85 };
-// Decision-engine line id → yard line candidates
-const LINE_ALIAS: Record<string, string[]> = {
-  UP_MAIN: ["UP_MAIN"],
-  DN_MAIN: ["DN_MAIN"],
-  UP_LOOP: ["COMMON_LOOP", "PASSING_LOOP"],
-  DN_LOOP: ["SIDE_LOOP"],
-};
-
 const TrainMarker = ({ train }: { train: TrainState }) => {
   const ref = useRef<SVGGElement>(null);
 
@@ -127,45 +117,24 @@ const StationYardLayout = ({
     return overrides;
   }, [sensorState, yard]);
 
-  // Horizontal geometry per yard line, derived from segment paths
-  const lineGeometry = useMemo(() => {
-    const geo: Record<string, { y: number; minX: number; maxX: number }> = {};
-    for (const seg of yard.segments) {
-      if (!seg.lineId) continue;
-      const ep = parseEndpoints(seg.d);
-      const xs = [ep.sx, ep.ex];
-      const g = geo[seg.lineId];
-      if (!g) {
-        geo[seg.lineId] = { y: (ep.sy + ep.ey) / 2, minX: Math.min(...xs), maxX: Math.max(...xs) };
-      } else {
-        g.minX = Math.min(g.minX, ...xs);
-        g.maxX = Math.max(g.maxX, ...xs);
-      }
-    }
-    return geo;
-  }, [yard]);
-
-  // Decision-engine trains (from POST /decision store) → yard positions
+  // Decision-engine trains (from POST /decision store) → yard positions.
+  // Position resolved from the yard's declared blocks: train.block_id → block,
+  // block span on train.line_id → midpoint x; y from the yard line.
   const decisionMarkers = useMemo(() => {
     if (!sensorState?.trains?.length) return [];
+    const lineById = new Map(yard.lines.map((l) => [l.id, l]));
     return sensorState.trains.map((t): DecisionTrain & { x: number; y: number } => {
-      const candidates = LINE_ALIAS[t.line_id] ?? [t.line_id];
-      let lineId: string | undefined;
-      for (const c of candidates) {
-        if (lineGeometry[c]) {
-          lineId = c;
-          break;
-        }
+      const block = yard.blocks.find((b) => b.id === t.block_id);
+      const span =
+        block?.spans.find((s) => s.lineId === t.line_id) ??
+        block?.spans[0];
+      if (span) {
+        const line = lineById.get(span.lineId);
+        return { ...t, x: (span.from_x + span.to_x) / 2, y: line?.y ?? 150 };
       }
-      const geo = lineId ? lineGeometry[lineId] : undefined;
-      const frac = BLOCK_X[t.block_id] ?? 0.5;
-      const x = geo
-        ? Math.min(geo.maxX, Math.max(geo.minX, geo.minX + frac * (geo.maxX - geo.minX)))
-        : 600;
-      const y = geo?.y ?? 150;
-      return { ...t, x, y };
+      return { ...t, x: 600, y: 150 };
     });
-  }, [sensorState?.trains, lineGeometry]);
+  }, [sensorState?.trains, yard]);
 
   const [trains, setTrains] = useState<TrainState[]>([]);
   const lastUpdateTimeRef = useRef<number>(0);
