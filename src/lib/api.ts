@@ -101,3 +101,48 @@ export async function getDecision(
   }
   return res.json();
 }
+
+export interface Advisory {
+  id: string;
+  title: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  location: string;
+  duration: string;
+  description: string;
+  affected_trains: string[];
+  strategies: string[];
+}
+
+export interface AdvisoryResponse {
+  advisories: Advisory[];
+}
+
+export async function getAdvisories(): Promise<AdvisoryResponse> {
+  const res = await fetch(`${API_URL}/advisory`);
+  if (!res.ok) {
+    throw new Error(`Failed to load advisories (${res.status})`);
+  }
+  return res.json();
+}
+
+export interface DelayPrediction {
+  train_id: string;
+  train_type: string;
+  predicted_delay_min: number;
+}
+
+export async function predictDelay(
+  params: Record<string, string | number | undefined>
+): Promise<DelayPrediction> {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== "") {
+      qs.set(k, String(v));
+    }
+  }
+  const res = await fetch(`${API_URL}/predict-delay?${qs.toString()}`);
+  if (!res.ok) {
+    throw new Error(`Delay prediction failed (${res.status})`);
+  }
+  return res.json();
+}
