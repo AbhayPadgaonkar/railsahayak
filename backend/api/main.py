@@ -12,6 +12,7 @@ from backend.rules.turnouts import check_turnout_conflict
 from backend.api.sensors_api import router as sensor_router
 from backend.api.yard_api import router as yard_router
 from backend.api.auth_api import router as auth_router
+from backend.api.advisory import router as advisory_router
 from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
 from backend.services.route_service import RouteService
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(sensor_router)
 app.include_router(yard_router)
 app.include_router(auth_router)
+app.include_router(advisory_router)
 
 
 class Gradient(BaseModel):
