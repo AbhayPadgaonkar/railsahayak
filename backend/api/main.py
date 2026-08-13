@@ -16,6 +16,7 @@ from backend.api.advisory import router as advisory_router
 from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
 from backend.services.route_service import RouteService
+from backend.services.decision_state import record_decision
 
 route_service = RouteService(section_id="section_A")
 
@@ -102,9 +103,27 @@ def make_decision(payload: SectionDecisionRequest):
     def compute_current_delay(train: TrainRequest) -> int:
         return max(0, train.current_time - train.scheduled_time)
 
+    def persist(train: TrainRequest, allow: bool, max_speed):
+        record_decision(
+            train_id=train.train_id,
+            block_id=train.block_id,
+            line_id=train.line_id,
+            allow_movement=allow,
+            max_speed=max_speed,
+            signal_state=train.signal_state,
+        )
+
     emergency = emergency_mode_decision(payload.context.disaster_active)
     if not emergency["optimization_allowed"]:
         for train in payload.trains:
+            record_decision(
+                train_id=train.train_id,
+                block_id=train.block_id,
+                line_id=train.line_id,
+                allow_movement=False,
+                max_speed=None,
+                signal_state=train.signal_state,
+            )
             results.append(
                 DecisionResponse(
                     train_id=train.train_id,
@@ -134,6 +153,7 @@ def make_decision(payload: SectionDecisionRequest):
             has_written_authority=train.has_written_authority,
         )
         if not signal_result["can_proceed"]:
+            persist(train, False, None)
             results.append(
                 DecisionResponse(
                     train_id=train.train_id,
@@ -153,6 +173,7 @@ def make_decision(payload: SectionDecisionRequest):
             occupied_lines=payload.context.occupied_lines,
         )
         if not line_result["can_enter"]:
+            persist(train, False, None)
             results.append(
                 DecisionResponse(
                     train_id=train.train_id,
@@ -173,6 +194,7 @@ def make_decision(payload: SectionDecisionRequest):
             route_service=route_service,
         )
         if not turnout_result["can_proceed"]:
+            persist(train, False, None)
             results.append(
                 DecisionResponse(
                     train_id=train.train_id,
@@ -194,6 +216,7 @@ def make_decision(payload: SectionDecisionRequest):
             fouling_segments=payload.context.fouling_segments,
         )
         if not fouling_result["safe"]:
+            persist(train, False, None)
             results.append(
                 DecisionResponse(
                     train_id=train.train_id,
@@ -237,6 +260,8 @@ def make_decision(payload: SectionDecisionRequest):
                 "gradient": train.gradient.dict() if train.gradient else None,
             }
         )
+
+        persist(train, True, speed_result["max_speed"])
 
         results.append(
             DecisionResponse(

@@ -4,6 +4,8 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
+from backend.services.decision_state import active_decisions
+
 router = APIRouter()
 
 YARDS_DIR = Path(__file__).resolve().parent.parent / "config" / "yards"
@@ -61,4 +63,5 @@ def get_sensor_snapshot():
         "station_id": yard["station_id"],
         "zones": zones,
         "signals": signals,
+        "trains": active_decisions(),
     }

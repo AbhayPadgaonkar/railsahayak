@@ -27,6 +27,16 @@ export interface SensorSnapshot {
   station_id: string;
   zones: Record<string, boolean>;
   signals: Record<string, SignalAspect>;
+  trains?: DecisionTrain[];
+}
+
+export interface DecisionTrain {
+  train_id: string;
+  block_id: string;
+  line_id: string;
+  allow_movement: boolean;
+  max_speed: number | null;
+  signal_state: string;
 }
 
 export async function getSensorSnapshot(): Promise<SensorSnapshot> {
