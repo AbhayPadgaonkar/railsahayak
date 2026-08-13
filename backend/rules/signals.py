@@ -20,6 +20,13 @@ def check_signal_permission(train, signal_state, has_written_authority=False):
                 "reason": "Proceed with written authority at caution speed"
             }
 
+    if signal_state == "YELLOW":
+        return {
+            "can_proceed": True,
+            "speed_mode": "CAUTION",
+            "reason": "Signal at caution – proceed with restricted speed"
+        }
+
     return {
         "can_proceed": True,
         "speed_mode": "NORMAL",

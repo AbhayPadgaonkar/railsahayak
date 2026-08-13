@@ -1,10 +1,16 @@
 def determine_speed_limit(
     sectional_speed: int,
     condition=None,
-    gradient=None
+    gradient=None,
+    signal_mode="NORMAL",
 ):
     max_speed = sectional_speed
     reasons = []
+
+    # G&SR Chapter V – Caution signal (speed restricted regardless of aspect)
+    if signal_mode == "CAUTION":
+        max_speed = min(max_speed, 30)
+        reasons.append("Restrictive signal – speed restricted to 30 km/h")
 
     # G&SR Chapter IV – Speed restrictions by condition
     if condition == "FOG":

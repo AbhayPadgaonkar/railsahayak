@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -86,6 +86,7 @@ class DecisionResponse(BaseModel):
 class OptimizedOrder(BaseModel):
     train_id: str
     order: int
+    reason: Optional[str] = None
 
 
 class SectionDecisionResponse(BaseModel):
@@ -117,6 +118,15 @@ def make_decision(payload: SectionDecisionRequest):
 
     for train in payload.trains:
         reasons = []
+
+        if train.train_type not in TrainType.__members__:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Unknown train_type '{train.train_type}' for train "
+                    f"'{train.train_id}'. Valid: {', '.join(TrainType.__members__)}"
+                ),
+            )
 
         signal_result = check_signal_permission(
             train=train.train_id,
@@ -177,6 +187,7 @@ def make_decision(payload: SectionDecisionRequest):
         for t in turnout_result.get("required_turnouts", []):
             if t not in payload.context.occupied_turnouts:
                 payload.context.occupied_turnouts.append(t)
+        reasons.append(turnout_result["reason"])
 
         fouling_result = check_fouling(
             track_segment=train.block_id,
@@ -207,6 +218,7 @@ def make_decision(payload: SectionDecisionRequest):
             sectional_speed=train.sectional_speed,
             condition=train.condition,
             gradient=train.gradient,
+            signal_mode=signal_result["speed_mode"],
         )
         reasons.append(speed_result["reason"])
 
@@ -267,7 +279,11 @@ def make_decision(payload: SectionDecisionRequest):
             optimized = optimize_train_order(trains_in_line)
             if optimized:
                 optimized_order.extend(
-                    OptimizedOrder(train_id=t["train_id"], order=i)
+                    OptimizedOrder(
+                        train_id=t["train_id"],
+                        order=i,
+                        reason=_order_rationale(t),
+                    )
                     for i, t in enumerate(optimized)
                 )
 
@@ -280,3 +296,15 @@ def make_decision(payload: SectionDecisionRequest):
 @app.get("/health")
 def health_check():
     return {"status": "RailSahayak API running"}
+
+
+def _order_rationale(t: dict) -> str:
+    gradient = t.get("gradient")
+    if (
+        t["train_type"] == "GOODS"
+        and gradient
+        and gradient["direction"] == "UP"
+        and gradient["value"] <= 200
+    ):
+        return "Goods-first clearance on steep UP gradient (Ghat rule)"
+    return "Priority precedence per IR train class"

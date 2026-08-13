@@ -14,7 +14,15 @@ def check_turnout_conflict(
                 "reason": f"Turnout {turnout} already locked"
             }
 
+    if required:
+        return {
+            "can_proceed": True,
+            "required_turnouts": required,
+            "reason": "Turnout clear"
+        }
+
     return {
         "can_proceed": True,
-        "required_turnouts": required
+        "required_turnouts": required,
+        "reason": "No turnout involved"
     }

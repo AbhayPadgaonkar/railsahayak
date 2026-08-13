@@ -491,10 +491,15 @@ const DecisionPanel = () => {
                 {[...result.optimized_order]
                   .sort((a, b) => a.order - b.order)
                   .map((o, i) => (
-                    <div key={o.train_id} className="flex items-center gap-2">
+                    <div key={o.train_id} className="flex flex-col items-start gap-0.5">
                       <span className="text-[11px] px-2.5 py-1 rounded-md bg-sky-900 text-sky-200 font-semibold">
                         {o.train_id}
                       </span>
+                      {o.reason && (
+                        <span className="text-[10px] text-slate-500">
+                          {o.reason}
+                        </span>
+                      )}
                       {i < result.optimized_order!.length - 1 && (
                         <span className="text-slate-600">→</span>
                       )}
