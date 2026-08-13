@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { SignalAspect, YardSchema } from "@/lib/yardlayout/schema";
 import { buildYardLayout, BuiltSegment } from "@/lib/yardlayout/builder";
-import { getYardSchema, SensorSnapshot } from "@/lib/api";
+import { getYardSchema, SensorSnapshot, DecisionTrain } from "@/lib/api";
 import demoYard from "@/config/yards/demo_yard.json";
 
 type TrackStatus = "free" | "occupied" | "blocked";
@@ -28,6 +28,16 @@ interface StationYardLayoutProps {
 const parseEndpoints = (d: string) => {
   const nums = d.match(/-?[\d.]+/g)!.map(Number);
   return { sx: nums[0], sy: nums[1], ex: nums[2], ey: nums[3] };
+};
+
+// Decision-engine block → horizontal fraction along a yard line
+const BLOCK_X: Record<string, number> = { A_B: 0.15, B_C: 0.5, C_D: 0.85 };
+// Decision-engine line id → yard line candidates
+const LINE_ALIAS: Record<string, string[]> = {
+  UP_MAIN: ["UP_MAIN"],
+  DN_MAIN: ["DN_MAIN"],
+  UP_LOOP: ["COMMON_LOOP", "PASSING_LOOP"],
+  DN_LOOP: ["SIDE_LOOP"],
 };
 
 const TrainMarker = ({ train }: { train: TrainState }) => {
@@ -116,6 +126,46 @@ const StationYardLayout = ({
     }
     return overrides;
   }, [sensorState, yard]);
+
+  // Horizontal geometry per yard line, derived from segment paths
+  const lineGeometry = useMemo(() => {
+    const geo: Record<string, { y: number; minX: number; maxX: number }> = {};
+    for (const seg of yard.segments) {
+      if (!seg.lineId) continue;
+      const ep = parseEndpoints(seg.d);
+      const xs = [ep.sx, ep.ex];
+      const g = geo[seg.lineId];
+      if (!g) {
+        geo[seg.lineId] = { y: (ep.sy + ep.ey) / 2, minX: Math.min(...xs), maxX: Math.max(...xs) };
+      } else {
+        g.minX = Math.min(g.minX, ...xs);
+        g.maxX = Math.max(g.maxX, ...xs);
+      }
+    }
+    return geo;
+  }, [yard]);
+
+  // Decision-engine trains (from POST /decision store) → yard positions
+  const decisionMarkers = useMemo(() => {
+    if (!sensorState?.trains?.length) return [];
+    return sensorState.trains.map((t): DecisionTrain & { x: number; y: number } => {
+      const candidates = LINE_ALIAS[t.line_id] ?? [t.line_id];
+      let lineId: string | undefined;
+      for (const c of candidates) {
+        if (lineGeometry[c]) {
+          lineId = c;
+          break;
+        }
+      }
+      const geo = lineId ? lineGeometry[lineId] : undefined;
+      const frac = BLOCK_X[t.block_id] ?? 0.5;
+      const x = geo
+        ? Math.min(geo.maxX, Math.max(geo.minX, geo.minX + frac * (geo.maxX - geo.minX)))
+        : 600;
+      const y = geo?.y ?? 150;
+      return { ...t, x, y };
+    });
+  }, [sensorState?.trains, lineGeometry]);
 
   const [trains, setTrains] = useState<TrainState[]>([]);
   const lastUpdateTimeRef = useRef<number>(0);
@@ -260,6 +310,20 @@ const StationYardLayout = ({
           />
           <span className=" text-gray-300">Track Occupied</span>
         </div>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: "#10b981" }}
+          />
+          <span className=" text-gray-300">Decision GO</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: "#ef4444" }}
+          />
+          <span className=" text-gray-300">Decision HOLD</span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
@@ -354,6 +418,33 @@ const StationYardLayout = ({
             {/* Layer 2: Animated trains */}
             {trains.map((train) => (
               <TrainMarker key={train.id} train={train} />
+            ))}
+
+            {/* Layer 3: Decision-engine trains */}
+            {decisionMarkers.map((d) => (
+              <g
+                key={`dec-${d.train_id}`}
+                transform={`translate(${d.x}, ${d.y})`}
+              >
+                <circle
+                  r={6}
+                  fill={d.allow_movement ? "#10b981" : "#ef4444"}
+                  stroke="#0f172a"
+                  strokeWidth={1.5}
+                />
+                <rect x={-26} y={-23} width={52} height={13} rx={3} fill="#0f172a" stroke="#475569" strokeWidth={0.75} />
+                <text
+                  x={0}
+                  y={-13}
+                  textAnchor="middle"
+                  fontSize="8.5"
+                  fill="#e2e8f0"
+                  fontFamily="sans-serif"
+                >
+                  {d.train_id}
+                  {d.max_speed != null ? ` ${d.max_speed}` : ""}
+                </text>
+              </g>
             ))}
 
             {/* Labels */}
