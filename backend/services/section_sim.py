@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from backend.services.decision_state import active_decisions
+
 BLOCK_LENGTH_KM = 4.0
 TIME_SCALE = 0.5  # real seconds -> sim minutes (2 real sec = 1 sim min)
 
@@ -131,6 +133,10 @@ class SectionSim:
             if not seq:
                 entry["_spawned"] = True
                 continue
+            if any(t.train_id == entry["train_id"] for t in self.trains):
+                # already on the map (e.g. seeded from a decision) — don't duplicate
+                entry["_spawned"] = True
+                continue
             head = seq[0]
             if self._occupied(head, entry["line_id"]):
                 continue
@@ -155,13 +161,54 @@ class SectionSim:
             for entry in self.schedule:
                 entry["_spawned"] = False
 
+    # ---------- decision steering ----------
+
+    def _decision_map(self) -> Dict[str, dict]:
+        return {d["train_id"]: d for d in active_decisions()}
+
+    def _seed_from_decisions(self, decisions: Dict[str, dict]):
+        """Spawn a sim train for a decided train that is not yet on the map,
+        so a controller-created train from POST /decision appears in motion."""
+        for decision in decisions.values():
+            train_id = decision["train_id"]
+            if any(t.train_id == train_id for t in self.trains):
+                continue
+            block_id = decision["block_id"]
+            line_id = decision["line_id"]
+            if block_id not in self.blocks:
+                continue
+            if line_id not in self.lines:
+                continue
+            seq = self._traversal(line_id)
+            if not seq:
+                continue
+            speed = decision.get("max_speed") or 90
+            self.trains.append(
+                SimTrain(
+                    train_id=train_id,
+                    block_id=block_id,
+                    line_id=line_id,
+                    position=0.0,
+                    speed_kmph=speed,
+                )
+            )
+
     # ---------- advancement ----------
 
     def _advance(self, delta_min: float):
         self._elapsed_min += delta_min
         self._spawn_due()
+        decisions = self._decision_map()
+        self._seed_from_decisions(decisions)
 
         for train in list(self.trains):
+            decision = decisions.get(train.train_id)
+
+            if decision and not decision["allow_movement"]:
+                # HOLD: train stops where it is until a release decision
+                train.position = min(train.position, 1.0)
+                continue
+
             if train._dwell_remaining > 0:
                 train._dwell_remaining -= delta_min
                 if train._dwell_remaining <= 0:
@@ -170,7 +217,10 @@ class SectionSim:
 
             if train.speed_kmph <= 0:
                 continue
-            distance_km = (train.speed_kmph * delta_min) / 60
+            effective_speed = train.speed_kmph
+            if decision and decision.get("max_speed"):
+                effective_speed = min(train.speed_kmph, decision["max_speed"])
+            distance_km = (effective_speed * delta_min) / 60
             train.position += distance_km / BLOCK_LENGTH_KM
 
             if train.position < 1.0:
