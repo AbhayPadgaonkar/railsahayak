@@ -13,6 +13,27 @@ YARDS_DIR = Path(__file__).resolve().parent.parent / "config" / "yards"
 _yard_cache: dict = {}
 
 
+def _live_decision_trains():
+    """Merge active decisions with the live sim so markers track real movement.
+
+    A decided train that is running in the sim reports its current block/line
+    (position updates as it moves); its decision fields (allow_movement,
+    max_speed, signal_state) come from the decision store. Decisions without a
+    matching sim train are passed through so a freshly-posted decision shows up
+    immediately (the sim seeds it on the next tick)."""
+    sim_by_id = {t.train_id: t for t in section_sim.trains}
+    for decision in active_decisions():
+        sim = sim_by_id.get(decision["train_id"])
+        if sim:
+            yield {
+                **decision,
+                "block_id": sim.block_id,
+                "line_id": sim.line_id,
+            }
+        else:
+            yield decision
+
+
 def _load_yard(station_id: str = "demo_yard") -> dict:
     if station_id not in _yard_cache:
         path = YARDS_DIR / f"{station_id}.json"
@@ -67,5 +88,5 @@ def get_sensor_snapshot():
         "station_id": yard["station_id"],
         "zones": zones,
         "signals": signals,
-        "trains": active_decisions(),
+        "trains": list(_live_decision_trains()),
     }
