@@ -220,3 +220,85 @@ export async function getAuditLogs(limit = 50): Promise<AuditEntry[]> {
   const body = (await res.json()) as { logs: AuditEntry[] };
   return body.logs;
 }
+
+export interface CrisisTypeInfo {
+  type: string;
+  label: string;
+  is_disaster: boolean;
+  default_severity: string;
+  default_action: string;
+}
+
+export interface CrisisStation {
+  station_id: string;
+  name: string;
+}
+
+export interface Crisis {
+  id: string;
+  type: string;
+  label: string;
+  is_disaster: boolean;
+  severity: string;
+  location: string;
+  block_id?: string | null;
+  description: string;
+  status: "ACTIVE" | "RESOLVED";
+  declared_at: string;
+  resolved_at?: string | null;
+  affected_trains: string[];
+  station_name?: string | null;
+}
+
+export interface CrisisState {
+  disaster_active: boolean;
+  types: CrisisTypeInfo[];
+  stations: CrisisStation[];
+  crises: Crisis[];
+}
+
+export async function getCrises(): Promise<CrisisState> {
+  const res = await fetch(`${API_URL}/crisis`);
+  if (!res.ok) {
+    throw new Error(`Failed to load crisis state (${res.status})`);
+  }
+  return res.json();
+}
+
+export interface DeclareCrisisParams {
+  crisis_type: string;
+  severity?: string | null;
+  location: string;
+  block_id?: string | null;
+  description?: string | null;
+}
+
+export async function declareCrisis(
+  params: DeclareCrisisParams
+): Promise<Crisis> {
+  const res = await fetch(`${API_URL}/crisis`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Failed to declare crisis (${res.status})`);
+  }
+  const resp = (await res.json()) as { crisis: Crisis };
+  return resp.crisis;
+}
+
+export async function resolveCrisis(crisisId: string): Promise<Crisis> {
+  const res = await fetch(`${API_URL}/crisis/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ crisis_id: crisisId }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Failed to resolve crisis (${res.status})`);
+  }
+  const resp = (await res.json()) as { crisis: Crisis };
+  return resp.crisis;
+}

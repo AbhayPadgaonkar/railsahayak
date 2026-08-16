@@ -12,6 +12,7 @@ from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
 from backend.services.route_service import RouteService
 from backend.services.decision_state import record_decision, record_action
+from backend.services.crisis_state import disaster_active
 
 route_service = RouteService(section_id="section_A")
 
@@ -107,7 +108,9 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
             signal_state=train.signal_state,
         )
 
-    emergency = emergency_mode_decision(payload.context.disaster_active)
+    emergency = emergency_mode_decision(
+        payload.context.disaster_active or disaster_active()
+    )
     if not emergency["optimization_allowed"]:
         for train in payload.trains:
             record_decision(
