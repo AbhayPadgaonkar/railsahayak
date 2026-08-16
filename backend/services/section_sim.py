@@ -9,8 +9,10 @@ from backend.services.decision_state import active_decisions
 BLOCK_LENGTH_KM = 4.0
 TIME_SCALE = 0.5  # real seconds -> sim minutes (2 real sec = 1 sim min)
 
-YARDS_DIR = Path(__file__).resolve().parent.parent / "config" / "yards"
-TIMETABLES_DIR = Path(__file__).resolve().parent.parent / "config" / "timetables"
+ROOT = Path(__file__).resolve().parent.parent
+CONFIG_DIR = ROOT / "config"
+YARDS_DIR = CONFIG_DIR / "yards"
+TIMETABLES_DIR = CONFIG_DIR / "timetables"
 
 
 @dataclass
@@ -39,19 +41,46 @@ class SectionSim:
     sectional speed, dwell at scheduled stops (occupying the block), and
     exit once they clear the section. The schedule loops so the map stays
     live indefinitely. Occupancy follows absolute-block semantics: a
-    block|line is occupied until a train fully clears it."""
+    block|line is occupied until a train fully clears it.
 
-    def __init__(self, timetable_id: str = "demo_timetable"):
-        yard = json.loads(
-            (YARDS_DIR / "demo_yard.json").read_text(encoding="utf-8")
+    Model: the full line consists of the stations listed in sections.json
+    `line_order`. Each station contributes its yard's lines and blocks
+    (globally-unique block ids), and the per-line traversal walks the
+    stations in order, so a single train crosses the entire line.
+    """
+
+    def __init__(
+        self,
+        line_config: str = "sections.json",
+        timetable_id: str = "proto_timetable",
+    ):
+        line_cfg = json.loads(
+            (CONFIG_DIR / line_config).read_text(encoding="utf-8")
         )
-        self.lines = {l["id"]: l for l in yard["lines"]}
+        self.line_order: List[str] = line_cfg["line_order"]
+        self.line_id = line_cfg.get("line_id", "PROTO_LINE")
+        self.line_name = line_cfg.get("line_name", "Prototype line")
+
+        yards = [
+            json.loads((YARDS_DIR / f"{sid}.json").read_text(encoding="utf-8"))
+            for sid in self.line_order
+        ]
+
+        self.lines: Dict[str, dict] = {}
+        for yard in yards:
+            for l in yard["lines"]:
+                if l["id"] not in self.lines:
+                    self.lines[l["id"]] = {"direction": l.get("direction", "UP")}
+
         self.blocks: Dict[str, dict] = {}
-        for b in yard["blocks"]:
-            self.blocks[b["id"]] = {
-                "lines": {s["line"]: (s["from_x"], s["to_x"]) for s in b["lines"]},
-                "next_blocks": b.get("next_blocks", []),
-            }
+        self._block_station: Dict[str, str] = {}
+        for station_id, yard in zip(self.line_order, yards):
+            for b in yard["blocks"]:
+                self.blocks[b["id"]] = {
+                    "lines": {s["line"]: (s["from_x"], s["to_x"]) for s in b["lines"]},
+                    "next_blocks": b.get("next_blocks", []),
+                }
+                self._block_station[b["id"]] = station_id
 
         self.sequence: Dict[str, List[str]] = {}
         for line_id in self.lines:
@@ -71,29 +100,26 @@ class SectionSim:
     # ---------- geometry ----------
 
     def _build_sequence(self, line_id: str) -> List[str]:
-        block_ids = [
+        """Full-line traversal in station order.
+
+        Each line runs through every station: collect that station's blocks
+        that carry the line, order them by x (ascending), and append in
+        line_order. Blocks have globally-unique ids so cross-station next is
+        ``station i's last block -> station i+1's first block``."""
+        blocks_with_line = [
             bid for bid, blk in self.blocks.items() if line_id in blk["lines"]
         ]
-        if not block_ids:
-            return []
-        starts = [
-            bid
-            for bid in block_ids
-            if not any(bid in self.blocks[p]["next_blocks"] for p in block_ids)
-        ]
-        if not starts:
-            starts = [block_ids[0]]
+        by_station: Dict[str, List[str]] = {sid: [] for sid in self.line_order}
+        for bid in blocks_with_line:
+            by_station[self._block_station[bid]].append(bid)
+
         seq: List[str] = []
-        seen: Set[str] = set()
-        for start in starts:
-            cur = start
-            while cur and cur not in seen and cur in block_ids:
-                seen.add(cur)
-                seq.append(cur)
-                cur = next(
-                    (n for n in self.blocks[cur]["next_blocks"] if n in block_ids),
-                    None,
-                )
+        for sid in self.line_order:
+            ordered = sorted(
+                by_station[sid],
+                key=lambda b: self.blocks[b]["lines"][line_id][0],
+            )
+            seq.extend(ordered)
         return seq
 
     def _traversal(self, line_id: str) -> List[str]:
@@ -103,9 +129,12 @@ class SectionSim:
         return seq
 
     def _next_block(self, train: SimTrain) -> Optional[str]:
-        seq = self._traversal(train.line_id)
+        return self._next_block_after(train.line_id, train.block_id)
+
+    def _next_block_after(self, line_id: str, block_id: str) -> Optional[str]:
+        seq = self._traversal(line_id)
         try:
-            i = seq.index(train.block_id)
+            i = seq.index(block_id)
         except ValueError:
             return None
         return seq[i + 1] if i + 1 < len(seq) else None
@@ -241,7 +270,7 @@ class SectionSim:
                 train.block_id = next_block
                 train.position = 0.0
             elif not next_block:
-                # Terminal block cleared — train leaves the section
+                # Terminal block cleared — train leaves the line
                 self.trains.remove(train)
 
         self._loop_reset()

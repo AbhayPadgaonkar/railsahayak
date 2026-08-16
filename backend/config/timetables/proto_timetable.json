@@ -1,0 +1,94 @@
+{
+  "section_id": "PROTO_LINE",
+  "schedule": [
+    {
+      "train_id": "12601",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "UP_MAIN",
+      "entry_min": 0,
+      "speed_kmph": 130,
+      "stops": []
+    },
+    {
+      "train_id": "12301",
+      "train_type": "RAJDHANI",
+      "line_id": "DN_MAIN",
+      "entry_min": 2,
+      "speed_kmph": 110,
+      "stops": []
+    },
+    {
+      "train_id": "12032",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "entry_min": 6,
+      "speed_kmph": 100,
+      "stops": []
+    },
+    {
+      "train_id": "15003",
+      "train_type": "PASSENGER",
+      "line_id": "DN_MAIN",
+      "entry_min": 9,
+      "speed_kmph": 90,
+      "stops": [
+        { "block_id": "ST_B1_BC", "dwell_min": 3 }
+      ]
+    },
+    {
+      "train_id": "15004",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "entry_min": 12,
+      "speed_kmph": 90,
+      "stops": [
+        { "block_id": "ST_A2_BC", "dwell_min": 2 },
+        { "block_id": "ST_B2_BC", "dwell_min": 2 }
+      ]
+    },
+    {
+      "train_id": "13507",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "entry_min": 15,
+      "speed_kmph": 60,
+      "delay_min": 5,
+      "stops": []
+    },
+    {
+      "train_id": "14008",
+      "train_type": "MEMU",
+      "line_id": "DN_MAIN",
+      "entry_min": 18,
+      "speed_kmph": 80,
+      "stops": [
+        { "block_id": "ST_C1_BC", "dwell_min": 2 }
+      ]
+    },
+    {
+      "train_id": "13509",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "entry_min": 21,
+      "speed_kmph": 60,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "12506",
+      "train_type": "SHATABDI",
+      "line_id": "UP_MAIN",
+      "entry_min": 24,
+      "speed_kmph": 130,
+      "stops": []
+    },
+    {
+      "train_id": "12742",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "entry_min": 26,
+      "speed_kmph": 100,
+      "stops": []
+    }
+  ]
+}

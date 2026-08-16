@@ -62,7 +62,7 @@ const TrainMarker = ({ train }: { train: TrainState }) => {
 
 const StationYardLayout = ({
   schema,
-  stationId = "demo_yard",
+  stationId = "st_a1",
   sensorState,
   signalOverrides,
   statusOverrides,
