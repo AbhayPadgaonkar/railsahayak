@@ -11,7 +11,7 @@ from backend.rules.turnouts import check_turnout_conflict
 from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
 from backend.services.route_service import RouteService
-from backend.services.decision_state import record_decision
+from backend.services.decision_state import record_decision, record_action
 
 route_service = RouteService(section_id="section_A")
 
@@ -71,6 +71,25 @@ class SectionDecisionResponse(BaseModel):
     optimized_order: Optional[List[OptimizedOrder]] = None
 
 
+def _log_decision_run(results: List[DecisionResponse], optimized_order=None):
+    """Record an audit trail entry for a completed /decision run."""
+    record_action(
+        "decision_run",
+        {
+            "trains": [
+                {
+                    "train_id": r.train_id,
+                    "allow_movement": r.allow_movement,
+                    "max_speed": r.max_speed,
+                    "allowed_actions": r.allowed_actions,
+                }
+                for r in results
+            ],
+            "optimized_order": optimized_order,
+        },
+    )
+
+
 def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
     optimizer_input = []
     results = []
@@ -108,6 +127,7 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
                     reasons=[emergency["reason"]],
                 )
             )
+        _log_decision_run(results)
         return SectionDecisionResponse(decisions=results, optimized_order=None)
 
     for train in payload.trains:
@@ -282,6 +302,10 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
                     for i, t in enumerate(optimized)
                 )
 
+    _log_decision_run(
+        results,
+        optimized_order=[o.dict() for o in optimized_order] if optimized_order else None,
+    )
     return SectionDecisionResponse(
         decisions=results,
         optimized_order=optimized_order if optimized_order else None,

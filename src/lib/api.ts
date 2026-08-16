@@ -205,3 +205,18 @@ export async function predictDelay(
   }
   return res.json();
 }
+
+export interface AuditEntry {
+  action: string;
+  detail: Record<string, unknown>;
+  at: string;
+}
+
+export async function getAuditLogs(limit = 50): Promise<AuditEntry[]> {
+  const res = await fetch(`${API_URL}/auditlogs?limit=${limit}`);
+  if (!res.ok) {
+    throw new Error(`Failed to load audit logs (${res.status})`);
+  }
+  const body = (await res.json()) as { logs: AuditEntry[] };
+  return body.logs;
+}
