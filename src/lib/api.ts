@@ -302,3 +302,89 @@ export async function resolveCrisis(crisisId: string): Promise<Crisis> {
   const resp = (await res.json()) as { crisis: Crisis };
   return resp.crisis;
 }
+
+export interface WhatIfScenario {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface WhatIfTrain {
+  train_id: string;
+  train_type: string;
+  block_id: string;
+  line_id: string;
+  speed_kmph: number;
+}
+
+export interface WhatIfScenariosResponse {
+  scenarios: WhatIfScenario[];
+  trains: WhatIfTrain[];
+}
+
+export interface WhatIfRunParams {
+  train_id: string;
+  train_type: string;
+  block_id: string;
+  line_id: string;
+  sectional_speed: number;
+  scenario_type: string;
+  parameter?: number | null;
+  direction?: string;
+  scheduled_time?: number;
+  current_time?: number;
+  gradient?: Gradient | null;
+  condition?: string | null;
+}
+
+export interface WhatIfMovement {
+  allowed: boolean;
+  max_speed: number | null;
+  reason: string;
+}
+
+export interface WhatIfResult {
+  scenario_type: string;
+  scenario_label: string;
+  scenario_description: string;
+  train: {
+    train_id: string;
+    train_type: string;
+    block_id: string;
+    line_id: string;
+  };
+  predicted_delay: {
+    baseline_min: number;
+    scenario_min: number;
+    delta_min: number;
+  };
+  transit_impact_min: number;
+  movement: {
+    baseline: WhatIfMovement;
+    scenario: WhatIfMovement;
+  };
+  outcome: string;
+}
+
+export async function getWhatIfScenarios(): Promise<WhatIfScenariosResponse> {
+  const res = await fetch(`${API_URL}/whatif/scenarios`);
+  if (!res.ok) {
+    throw new Error(`Failed to load what-if scenarios (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function runWhatIfSimulation(
+  params: WhatIfRunParams
+): Promise<WhatIfResult> {
+  const res = await fetch(`${API_URL}/whatif/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Simulation failed (${res.status})`);
+  }
+  return res.json();
+}
