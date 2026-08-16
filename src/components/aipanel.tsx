@@ -14,6 +14,7 @@ const RecommendationCard = ({
   pending,
   onAccept,
   onDismiss,
+  section_name,
 }: Advisory & {
   pending?: "accept" | "dismiss" | null;
   onAccept: (id: string) => void;
@@ -38,6 +39,11 @@ const RecommendationCard = ({
         </div>
         <p className="text-[11px] text-gray-400 leading-snug">
           <strong className="text-gray-300">Location:</strong> {location}
+          {section_name ? (
+            <span className="ml-1 px-1.5 py-0.5 rounded bg-gray-700 text-gray-300 text-[10px] font-medium">
+              {section_name}
+            </span>
+          ) : null}
         </p>
         <p className="text-[11px] text-gray-400 leading-snug mb-1.5">
           <strong className="text-gray-300">Duration:</strong> {duration}
