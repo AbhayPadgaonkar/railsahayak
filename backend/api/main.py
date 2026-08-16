@@ -5,6 +5,7 @@ from backend.api.sensors_api import router as sensor_router
 from backend.api.yard_api import router as yard_router
 from backend.api.auth_api import router as auth_router
 from backend.api.advisory import router as advisory_router
+from backend.api.audit_api import router as audit_router
 from backend.services.decision_service import (
     SectionDecisionRequest,
     SectionDecisionResponse,
@@ -28,6 +29,7 @@ app.include_router(sensor_router)
 app.include_router(yard_router)
 app.include_router(auth_router)
 app.include_router(advisory_router)
+app.include_router(audit_router)
 
 
 @app.post("/decision", response_model=SectionDecisionResponse)
