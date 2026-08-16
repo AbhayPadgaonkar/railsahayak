@@ -136,6 +136,29 @@ export async function getAdvisories(): Promise<AdvisoryResponse> {
   return res.json();
 }
 
+export interface AdvisoryActionResult {
+  advisory_id: string;
+  action: string;
+  applied: boolean;
+  decision?: DecisionResult | null;
+}
+
+export async function applyAdvisory(
+  advisoryId: string,
+  action: "accept" | "dismiss"
+): Promise<AdvisoryActionResult> {
+  const res = await fetch(`${API_URL}/advisory/apply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ advisory_id: advisoryId, action }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Advisory action failed (${res.status})`);
+  }
+  return res.json();
+}
+
 export interface DelayPrediction {
   train_id: string;
   train_type: string;

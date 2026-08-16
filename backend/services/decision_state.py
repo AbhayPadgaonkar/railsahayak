@@ -4,6 +4,23 @@ from typing import Dict, List
 TTL_SECONDS = 180.0
 
 _ACTIVE: Dict[str, dict] = {}
+_ACTIONS: List[dict] = []
+
+
+def record_action(action: str, detail: dict):
+    _ACTIONS.append(
+        {
+            "action": action,
+            "detail": detail,
+            "at": time.strftime("%H:%M:%S"),
+        }
+    )
+    if len(_ACTIONS) > 200:
+        _ACTIONS[:] = _ACTIONS[-200:]
+
+
+def recent_actions(limit: int = 50) -> List[dict]:
+    return _ACTIONS[-limit:]
 
 
 def record_decision(
