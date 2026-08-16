@@ -16,6 +16,14 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
     label: "Advisory Dismissed",
     cls: "bg-slate-700 text-slate-200",
   },
+  crisis_declare: {
+    label: "Crisis Declared",
+    cls: "bg-red-900 text-red-200",
+  },
+  crisis_resolve: {
+    label: "Crisis Resolved",
+    cls: "bg-emerald-900 text-emerald-200",
+  },
 };
 
 const actionBadge = (action: string) =>
