@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DecisionRequest,
   DecisionResult,
   getDecision,
+  getSections,
+  getYardSchema,
+  LineInfo,
   TrainRequest,
 } from "@/lib/api";
 
@@ -23,51 +26,16 @@ const SIGNAL_STATES = ["GREEN", "YELLOW", "RED", "DEFECTIVE"];
 
 const CONDITIONS = ["", "FOG", "STORM"];
 
-const BLOCKS: Record<string, string[]> = {
-  A_B: ["B_C"],
-  B_C: ["C_D"],
-  C_D: [],
-};
-
 const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN"];
 
-const DEFAULT_TRAINS: TrainRequest[] = [
-  {
-    train_id: "RAJ1",
-    train_type: "RAJDHANI",
-    block_id: "A_B",
-    line_id: "UP_MAIN",
-    next_block_id: "B_C",
-    signal_state: "GREEN",
-    sectional_speed: 110,
-    scheduled_time: 1000,
-    current_time: 1015,
-    gradient: null,
-    condition: null,
-    has_written_authority: false,
-  },
-  {
-    train_id: "G3",
-    train_type: "GOODS",
-    block_id: "A_B",
-    line_id: "UP_MAIN",
-    next_block_id: "B_C",
-    signal_state: "GREEN",
-    sectional_speed: 75,
-    scheduled_time: 1000,
-    current_time: 1030,
-    gradient: null,
-    condition: null,
-    has_written_authority: false,
-  },
-];
+const ORDERING_LINE = "UP_MAIN"; // used to derive block order / next-block links
 
-const emptyTrain = (): TrainRequest => ({
+const emptyTrain = (block_id: string): TrainRequest => ({
   train_id: "",
   train_type: "PASSENGER",
-  block_id: "A_B",
+  block_id,
   line_id: "UP_MAIN",
-  next_block_id: "B_C",
+  next_block_id: null,
   signal_state: "GREEN",
   sectional_speed: 100,
   scheduled_time: 1000,
@@ -83,8 +51,18 @@ const labelCls = "block text-xs text-slate-400 mb-1";
 
 const num = (v: string) => (v === "" ? 0 : Number(v));
 
+interface StationModel {
+  station_id: string;
+  station_name: string;
+  blocks: string[];
+}
+
 const DecisionPanel = () => {
-  const [trains, setTrains] = useState<TrainRequest[]>(DEFAULT_TRAINS);
+  const [sections, setSections] = useState<LineInfo | null>(null);
+  const [sectionId, setSectionId] = useState<string>("");
+  const [transitStations, setTransitStations] = useState<StationModel[]>([]);
+  const [blockNext, setBlockNext] = useState<Record<string, string[]>>({});
+  const [trains, setTrains] = useState<TrainRequest[]>([]);
   const [occupiedLines, setOccupiedLines] = useState("");
   const [occupiedTurnouts, setOccupiedTurnouts] = useState("");
   const [foulingSegments, setFoulingSegments] = useState("");
@@ -93,6 +71,102 @@ const DecisionPanel = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Load section model once (controllers + station ownership)
+  useEffect(() => {
+    let cancelled = false;
+    getSections()
+      .then((info) => {
+        if (cancelled) return;
+        setSections(info);
+        const first = info.sections[0]?.section_id;
+        if (first) setSectionId(first);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to load sections");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // When the controller picks their section, load that section's station blocks
+  // and scope the default trains to it.
+  useEffect(() => {
+    if (!sections || !sectionId) return;
+    const section = sections.sections.find((s) => s.section_id === sectionId);
+    if (!section) return;
+    let cancelled = false;
+
+    Promise.all(
+      section.stations.map((station_id) =>
+        getYardSchema(station_id)
+          .catch(() => null)
+          .then((schema) => ({ station_id, schema }))
+      )
+    )
+      .then((loaded) => {
+        if (cancelled) return;
+
+        const models: StationModel[] = [];
+        const next: Record<string, string[]> = {};
+        for (const { station_id, schema } of loaded) {
+          if (!schema) continue;
+          // full-line next links follow the ordering line across stations
+          const inStation = schema.blocks.filter((b) =>
+            b.lines.some((s) => s.line === ORDERING_LINE)
+          );
+          const ordered = [...inStation].sort(
+            (a, b) =>
+              a.lines.find((s) => s.line === ORDERING_LINE)!.from_x -
+              b.lines.find((s) => s.line === ORDERING_LINE)!.from_x
+          );
+          const ids = ordered.map((b) => b.id);
+          ids.forEach((id, i) => {
+            next[id] = i + 1 < ids.length ? [ids[i + 1]] : [];
+          });
+          models.push({
+            station_id,
+            station_name: schema.station_name ?? station_id,
+            blocks: ids,
+          });
+        }
+
+        // Cross-station link: last block of a station -> first block of the next
+        // station (mirrors section_sim line traversal on the ordering line).
+        for (let i = 0; i < models.length - 1; i++) {
+          const cur = models[i];
+          const nxt = models[i + 1];
+          if (cur.blocks.length && nxt.blocks.length) {
+            const tail = cur.blocks[cur.blocks.length - 1];
+            const head = nxt.blocks[0];
+            next[tail] = next[tail] ?? [];
+            if (!next[tail].includes(head)) next[tail].push(head);
+          }
+        }
+
+        setTransitStations(models);
+        setBlockNext(next);
+        setTrains(models[0]?.blocks[0]
+          ? [
+              emptyTrain(models[0].blocks[0]),
+              emptyTrain(models[0].blocks[0]),
+            ]
+          : []);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to load station layouts");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sections, sectionId]);
+
+  const currentSection =
+    sections?.sections.find((s) => s.section_id === sectionId) ?? null;
+
+  const allBlocks = transitStations.flatMap((s) => s.blocks);
+
   const updateTrain = (index: number, patch: Partial<TrainRequest>) => {
     setTrains((prev) =>
       prev.map((t, i) => (i === index ? { ...t, ...patch } : t))
@@ -100,7 +174,7 @@ const DecisionPanel = () => {
   };
 
   const handleBlockChange = (index: number, block: string) => {
-    const nexts = BLOCKS[block] ?? [];
+    const nexts = blockNext[block] ?? [];
     updateTrain(index, {
       block_id: block,
       next_block_id: nexts[0] ?? null,
@@ -146,19 +220,36 @@ const DecisionPanel = () => {
         <div>
           <h1 className="text-xl font-bold text-white">Train Management</h1>
           <p className="text-xs text-slate-400">
-            Compose a section decision request against the G&SR rule engine
+            {currentSection
+              ? `Compose a decision request for ${currentSection.name} (${currentSection.controller_id}) against the G&SR rule engine`
+              : "Compose a section decision request against the G&SR rule engine"}
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <label className={labelCls}>Section</label>
+          <select
+            value={sectionId}
+            onChange={(e) => setSectionId(e.target.value)}
+            className={inputCls + " w-auto"}
+            disabled={!sections}
+          >
+            {(sections?.sections ?? []).map((s) => (
+              <option key={s.section_id} value={s.section_id}>
+                {s.name} ({s.controller_id})
+              </option>
+            ))}
+          </select>
           <button
-            onClick={() => setTrains((prev) => [...prev, emptyTrain()])}
+            onClick={() =>
+              setTrains((prev) => [...prev, emptyTrain(allBlocks[0] ?? "")])
+            }
             className="px-3 py-2 rounded-lg border border-slate-700 hover:border-slate-500 text-sm text-slate-300 transition-colors"
           >
             + Add Train
           </button>
           <button
             onClick={handleRun}
-            disabled={loading}
+            disabled={loading || allBlocks.length === 0}
             className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-60 disabled:cursor-not-allowed text-sm font-semibold transition-colors"
           >
             {loading ? "Running..." : "Run Decision"}
@@ -181,7 +272,7 @@ const DecisionPanel = () => {
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold text-white text-sm">
-                Train #{idx + 1}
+                Train #{idx + 1} — {currentSection?.name ?? "Section"}
               </h2>
               {trains.length > 1 && (
                 <button
@@ -227,10 +318,14 @@ const DecisionPanel = () => {
                   value={train.block_id}
                   onChange={(e) => handleBlockChange(idx, e.target.value)}
                 >
-                  {Object.keys(BLOCKS).map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
+                  {transitStations.map((station) => (
+                    <optgroup key={station.station_id} label={`${station.station_name} (${station.station_id})`}>
+                      {station.blocks.map((b) => (
+                        <option key={b} value={b}>
+                          {b}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </div>
@@ -258,7 +353,7 @@ const DecisionPanel = () => {
                   }
                 >
                   <option value="">(none)</option>
-                  {(BLOCKS[train.block_id] ?? []).map((b) => (
+                  {(blockNext[train.block_id] ?? []).map((b) => (
                     <option key={b} value={b}>
                       {b}
                     </option>
@@ -387,7 +482,14 @@ const DecisionPanel = () => {
 
       {/* Context */}
       <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <h2 className="font-semibold text-white text-sm mb-3">Section Context</h2>
+        <h2 className="font-semibold text-white text-sm mb-3">
+          Section Context
+          {currentSection && (
+            <span className="ml-2 text-xs text-slate-400 font-normal">
+              {currentSection.name} — {currentSection.controller_id}
+            </span>
+          )}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className={labelCls}>
@@ -397,7 +499,7 @@ const DecisionPanel = () => {
               className={inputCls}
               value={occupiedLines}
               onChange={(e) => setOccupiedLines(e.target.value)}
-              placeholder="B_C|UP_MAIN"
+              placeholder="ST_A1_AB|UP_MAIN"
             />
           </div>
           <div>
@@ -406,7 +508,7 @@ const DecisionPanel = () => {
               className={inputCls}
               value={occupiedTurnouts}
               onChange={(e) => setOccupiedTurnouts(e.target.value)}
-              placeholder="T1, T2"
+              placeholder="T1_ST_A1, T2_ST_A1"
             />
           </div>
           <div>
@@ -415,7 +517,7 @@ const DecisionPanel = () => {
               className={inputCls}
               value={foulingSegments}
               onChange={(e) => setFoulingSegments(e.target.value)}
-              placeholder="A_B"
+              placeholder="ST_A1_BC"
             />
           </div>
         </div>
