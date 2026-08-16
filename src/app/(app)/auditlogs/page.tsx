@@ -24,6 +24,10 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
     label: "Crisis Resolved",
     cls: "bg-emerald-900 text-emerald-200",
   },
+  whatif_run: {
+    label: "What-If Simulation",
+    cls: "bg-violet-900 text-violet-200",
+  },
 };
 
 const actionBadge = (action: string) =>
