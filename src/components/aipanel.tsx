@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Advisory, getAdvisories } from "@/lib/api";
+import { Advisory, applyAdvisory, getAdvisories } from "@/lib/api";
 
 // Individual recommendation card component
 const RecommendationCard = ({
@@ -11,9 +11,11 @@ const RecommendationCard = ({
   location,
   duration,
   description,
+  pending,
   onAccept,
   onDismiss,
 }: Advisory & {
+  pending?: "accept" | "dismiss" | null;
   onAccept: (id: string) => void;
   onDismiss: (id: string) => void;
 }) => {
@@ -46,15 +48,17 @@ const RecommendationCard = ({
       <div className="flex gap-1.5">
         <button
           onClick={() => onAccept(id)}
-          className="flex-1 bg-green-700 hover:bg-green-600 text-white font-semibold py-1 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-[11px]"
+          disabled={pending === "accept"}
+          className="flex-1 bg-green-700 hover:bg-green-600 disabled:bg-green-900 disabled:cursor-wait text-white font-semibold py-1 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 text-[11px]"
         >
-          Accept
+          {pending === "accept" ? "Applying…" : "Accept"}
         </button>
         <button
           onClick={() => onDismiss(id)}
-          className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-1 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-[11px]"
+          disabled={pending === "dismiss"}
+          className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-wait text-gray-200 font-semibold py-1 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 text-[11px]"
         >
-          Dismiss
+          {pending === "dismiss" ? "Dismissing…" : "Dismiss"}
         </button>
       </div>
     </div>
@@ -110,6 +114,10 @@ const AIRecommendationPanel = () => {
   }, []);
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [pendingIds, setPendingIds] = useState<
+    Record<string, "accept" | "dismiss">
+  >({});
+  const [actionError, setActionError] = useState<string | null>(null);
   const itemsPerPage = useItemsPerPage();
   useEffect(() => {
     if (
@@ -120,10 +128,27 @@ const AIRecommendationPanel = () => {
     }
   }, [itemsPerPage, recommendations.length, currentPage]);
 
-  const handleAccept = (id: string) =>
-    setRecommendations((prev) => prev.filter((r) => r.id !== id));
-  const handleDismiss = (id: string) =>
-    setRecommendations((prev) => prev.filter((r) => r.id !== id));
+  const runAction = async (id: string, action: "accept" | "dismiss") => {
+    setActionError(null);
+    setPendingIds((prev) => ({ ...prev, [id]: action }));
+    try {
+      await applyAdvisory(id, action);
+      setRecommendations((prev) => prev.filter((r) => r.id !== id));
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : `Failed to ${action} advisory`
+      );
+    } finally {
+      setPendingIds((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+  };
+
+  const handleAccept = (id: string) => runAction(id, "accept");
+  const handleDismiss = (id: string) => runAction(id, "dismiss");
 
   if (itemsPerPage === null) return null; // Wait until client mounts
 
@@ -139,6 +164,9 @@ const AIRecommendationPanel = () => {
     <div className="bottom-0 left-0 right-0 z-50 p-2 bg-gray-950/80 border-t border-gray-800 backdrop-blur-sm rounded-t-lg flex flex-col flex-1 min-h-0">
       <div className="flex justify-between items-center mb-1 px-2">
         <h2 className="text-base font-bold text-gray-100">AI Recommendations</h2>
+        {actionError && (
+          <p className="text-[11px] text-red-400">{actionError}</p>
+        )}
         {totalPages > 1 && (
           <div className="flex items-center gap-3">
             <button
@@ -176,6 +204,7 @@ const AIRecommendationPanel = () => {
             <RecommendationCard
               key={rec.id}
               {...rec}
+              pending={pendingIds[rec.id] ?? null}
               onAccept={handleAccept}
               onDismiss={handleDismiss}
             />
