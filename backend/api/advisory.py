@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -17,6 +17,7 @@ from backend.services.decision_service import (
     make_decision,
 )
 from backend.services.decision_state import record_action
+from backend.services.section_sim import section_sim
 
 router = APIRouter()
 
@@ -38,6 +39,8 @@ class Advisory(BaseModel):
     description: str
     affected_trains: List[str]
     strategies: List[str]
+    section_id: Optional[str] = None
+    section_name: Optional[str] = None
 
 
 class AdvisoryResponse(BaseModel):
@@ -53,54 +56,47 @@ STRATEGY_LABELS = {
     "PASS_HIGH_PRIORITY": "Pass High-Priority Train",
 }
 
-# Representative trains for SECTION_A (no live train store yet)
-_ROSTER = [
-    {
-        "train_id": "VB2",
-        "train_type": "VANDE_BHARAT",
-        "sectional_speed": 130,
-        "block_id": "C_D",
-        "line_id": "UP_MAIN",
-        "gradient_value": None,
-        "condition": None,
-    },
-    {
-        "train_id": "RAJ1",
-        "train_type": "RAJDHANI",
-        "sectional_speed": 110,
-        "block_id": "A_B",
-        "line_id": "UP_MAIN",
-        "gradient_value": None,
-        "condition": None,
-    },
-    {
-        "train_id": "G3",
-        "train_type": "GOODS",
-        "sectional_speed": 75,
-        "block_id": "A_B",
-        "line_id": "UP_MAIN",
-        "gradient_value": 150,
-        "condition": None,
-    },
-    {
-        "train_id": "P5",
-        "train_type": "PASSENGER",
-        "sectional_speed": 90,
-        "block_id": "B_C",
-        "line_id": "UP_MAIN",
-        "gradient_value": None,
-        "condition": None,
-    },
-]
-
+# Mock gradient profile per block id (preserved from the single-section demo,
+# applied per station so the line coverage stays uniform). Keyed by the
+# per-station middle block; other blocks are gradient-flat.
 _GRADIENTS = {
-    "A_B": {"value": 150, "direction": "UP"},
-    "B_C": {"value": 300, "direction": "UP"},
-    "C_D": {"value": 400, "direction": "DOWN"},
+    "AB": {"value": 150, "direction": "UP"},
+    "BC": {"value": 300, "direction": "UP"},
+    "CD": {"value": 400, "direction": "DOWN"},
 }
 
-# block -> next block within the section (for decision requests)
-_NEXT_BLOCK = {"A_B": "B_C", "B_C": "C_D", "C_D": None}
+
+def _gradient_for(block_id: str) -> Optional[dict]:
+    """Map a live block id (e.g. ST_B1_BC) to its gradient metadata."""
+    for suffix, meta in _GRADIENTS.items():
+        if block_id.endswith(f"_{suffix}"):
+            return meta
+    return None
+
+
+def _live_roster() -> List[dict]:
+    """Live trains on the line as advisory roster entries (block/line/speed)."""
+    return [
+        {
+            "train_id": t.train_id,
+            "train_type": t.train_type,
+            "sectional_speed": t.speed_kmph,
+            "block_id": t.block_id,
+            "line_id": t.line_id,
+        }
+        for t in section_sim.trains
+    ]
+
+
+def _section_of(block_id: str) -> Optional[dict]:
+    """Controller territory owning the block (via station -> sections.json)."""
+    station = section_sim._block_station.get(block_id)
+    if not station:
+        return None
+    for sec in section_sim.sections:
+        if station in sec["stations"]:
+            return sec
+    return None
 
 
 @router.get("/predict-delay", response_model=DelayPrediction)
@@ -135,11 +131,16 @@ def get_advisories():
 
 
 def _build_advisories() -> List[Advisory]:
+    section_sim.tick()  # advance the line sim so the roster reflects live trains
+    roster = _live_roster()
+    if not roster:
+        return []
+
     profiles = []
     intended_blocks = {}
     gradients = {}
 
-    for entry in _ROSTER:
+    for entry in roster:
         profile = build_train_profile(
             train_id=entry["train_id"],
             train_type=TrainType[entry["train_type"]],
@@ -147,7 +148,9 @@ def _build_advisories() -> List[Advisory]:
         )
         profiles.append(profile)
         intended_blocks[entry["train_id"]] = entry["block_id"]
-        gradients[entry["block_id"]] = _GRADIENTS[entry["block_id"]]
+        gradient = _gradient_for(entry["block_id"])
+        if gradient:
+            gradients[entry["block_id"]] = gradient
 
     conflicts = detect_conflicts(
         train_profiles=profiles,
@@ -158,13 +161,13 @@ def _build_advisories() -> List[Advisory]:
     advisories = []
     for i, conflict in enumerate(conflicts):
         primary = conflict.affected_trains[0]
-        block = intended_blocks.get(primary, "SECTION_A")
+        block = intended_blocks.get(primary, "")
 
         delay = predict_delay(
             train_id=primary,
             train_type=_train_type_of(profiles, primary),
             sectional_speed=_speed_of(profiles, primary),
-            gradient_value=_GRADIENTS.get(block, {}).get("value"),
+            gradient_value=_gradient_for(block).get("value") if _gradient_for(block) else None,
         ).predicted_delay_min
 
         title = STRATEGY_LABELS.get(
@@ -173,6 +176,9 @@ def _build_advisories() -> List[Advisory]:
             else "",
             conflict.conflict_type.value,
         )
+        section = _section_of(block)
+        section_id = section["section_id"] if section else None
+        section_name = f"{section['name']} ({section['controller_id']})" if section else None
         location = ", ".join(
             dict.fromkeys(intended_blocks.get(t, block) for t in conflict.affected_trains)
         )
@@ -191,6 +197,8 @@ def _build_advisories() -> List[Advisory]:
                 description=description,
                 affected_trains=conflict.affected_trains,
                 strategies=conflict.suggested_strategies,
+                section_id=section_id,
+                section_name=section_name,
             )
         )
 
@@ -234,12 +242,13 @@ _PASS_OR_HOLD_STRATEGIES = {
 }
 
 
-def _roster(affected_trains: List[str]) -> dict:
-    return {e["train_id"]: e for e in _ROSTER if e["train_id"] in affected_trains}
+def _roster_map() -> Dict[str, dict]:
+    return {e["train_id"]: e for e in _live_roster()}
 
 
 def _train_priority(train_id: str) -> int:
-    entry = next((e for e in _ROSTER if e["train_id"] == train_id), None)
+    roster = _roster_map()
+    entry = roster.get(train_id)
     if not entry:
         return 99
     profile = build_train_profile(
@@ -250,8 +259,17 @@ def _train_priority(train_id: str) -> int:
     return profile.priority
 
 
+def _next_block_id(block_id: str, line_id: str) -> Optional[str]:
+    return section_sim._next_block_after(line_id, block_id)
+
+
 def _build_apply_request(advisory: Advisory) -> SectionDecisionRequest:
-    entries = _roster(advisory.affected_trains)
+    roster = _roster_map()
+    entries = {tid: roster[tid] for tid in advisory.affected_trains if tid in roster}
+    if not entries:
+        raise HTTPException(
+            status_code=409, detail="Affected trains are no longer on the line"
+        )
     strategies = set(advisory.strategies)
 
     signals = {tid: "GREEN" for tid in entries}
@@ -265,7 +283,7 @@ def _build_apply_request(advisory: Advisory) -> SectionDecisionRequest:
     trains = []
     for tid, entry in entries.items():
         gradient = None
-        g = _GRADIENTS.get(entry["block_id"])
+        g = _gradient_for(entry["block_id"])
         if g:
             gradient = Gradient(value=g["value"], direction=g["direction"])
         trains.append(
@@ -274,13 +292,13 @@ def _build_apply_request(advisory: Advisory) -> SectionDecisionRequest:
                 train_type=entry["train_type"],
                 block_id=entry["block_id"],
                 line_id=entry["line_id"],
-                next_block_id=_NEXT_BLOCK.get(entry["block_id"]),
+                next_block_id=_next_block_id(entry["block_id"], entry["line_id"]),
                 signal_state=signals[tid],
                 sectional_speed=entry["sectional_speed"],
                 scheduled_time=1000,
                 current_time=1000,
                 gradient=gradient,
-                condition=entry.get("condition"),
+                condition=None,
                 has_written_authority=False,
             )
         )

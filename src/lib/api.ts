@@ -145,6 +145,8 @@ export interface Advisory {
   description: string;
   affected_trains: string[];
   strategies: string[];
+  section_id?: string | null;
+  section_name?: string | null;
 }
 
 export interface AdvisoryResponse {

@@ -28,6 +28,7 @@ class SimTrain:
     line_id: str
     position: float  # 0.0 = start of block, 1.0 = clear
     speed_kmph: int
+    train_type: str = "PASSENGER"
     stops: List[SimStop] = field(default_factory=list)
     _dwelled: Set[str] = field(default_factory=set)
     _dwell_remaining: float = 0.0
@@ -60,6 +61,7 @@ class SectionSim:
         self.line_order: List[str] = line_cfg["line_order"]
         self.line_id = line_cfg.get("line_id", "PROTO_LINE")
         self.line_name = line_cfg.get("line_name", "Prototype line")
+        self.sections: List[dict] = line_cfg.get("sections", [])
 
         yards = [
             json.loads((YARDS_DIR / f"{sid}.json").read_text(encoding="utf-8"))
@@ -177,6 +179,7 @@ class SectionSim:
                     line_id=entry["line_id"],
                     position=0.0,
                     speed_kmph=entry["speed_kmph"],
+                    train_type=entry.get("train_type", "PASSENGER"),
                     stops=[
                         SimStop(s["block_id"], s["dwell_min"])
                         for s in entry.get("stops", [])
@@ -221,6 +224,13 @@ class SectionSim:
                     speed_kmph=speed,
                 )
             )
+
+    def train_type(self, train_id: str) -> str:
+        """Train class for a live sim train (used by the advisory layer)."""
+        for t in self.trains:
+            if t.train_id == train_id:
+                return t.train_type
+        return "PASSENGER"
 
     # ---------- advancement ----------
 
