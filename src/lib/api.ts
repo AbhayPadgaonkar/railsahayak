@@ -7,10 +7,32 @@ export interface YardInfo {
   station_name: string;
 }
 
+export interface SectionInfo {
+  section_id: string;
+  name: string;
+  controller_id: string;
+  stations: string[];
+}
+
+export interface LineInfo {
+  line_id: string;
+  line_name: string;
+  line_order: string[];
+  sections: SectionInfo[];
+}
+
 export async function getYards(): Promise<YardInfo[]> {
   const res = await fetch(`${API_URL}/yards`);
   if (!res.ok) {
     throw new Error(`Failed to load yard list (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getSections(): Promise<LineInfo> {
+  const res = await fetch(`${API_URL}/sections`);
+  if (!res.ok) {
+    throw new Error(`Failed to load sections (${res.status})`);
   }
   return res.json();
 }
@@ -39,8 +61,9 @@ export interface DecisionTrain {
   signal_state: string;
 }
 
-export async function getSensorSnapshot(): Promise<SensorSnapshot> {
-  const res = await fetch(`${API_URL}/sensors`);
+export async function getSensorSnapshot(stationId?: string): Promise<SensorSnapshot> {
+  const qs = stationId ? `?station=${encodeURIComponent(stationId)}` : "";
+  const res = await fetch(`${API_URL}/sensors${qs}`);
   if (!res.ok) {
     throw new Error(`Failed to load sensor snapshot (${res.status})`);
   }

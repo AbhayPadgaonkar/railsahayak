@@ -7,8 +7,19 @@ from fastapi import APIRouter, HTTPException
 router = APIRouter()
 
 YARDS_DIR = Path(__file__).resolve().parent.parent / "config" / "yards"
+CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 
 STATION_ID_PATTERN = re.compile(r"^[a-z0-9_-]+$")
+
+
+@router.get("/sections")
+def list_sections():
+    """Line + section model (controllers, station ownership) for grouping the
+    station picker by section."""
+    path = CONFIG_DIR / "sections.json"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="No sections.json configured")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 @router.get("/yards")
