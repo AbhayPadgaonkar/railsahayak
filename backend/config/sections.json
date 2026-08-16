@@ -1,0 +1,32 @@
+{
+  "line_id": "PROTO_LINE",
+  "line_name": "Prototype line (mock)",
+  "line_order": [
+    "st_a1",
+    "st_a2",
+    "st_b1",
+    "st_b2",
+    "st_c1",
+    "st_c2"
+  ],
+  "sections": [
+    {
+      "section_id": "A",
+      "name": "Section A",
+      "controller_id": "CCG-VR",
+      "stations": ["st_a1", "st_a2"]
+    },
+    {
+      "section_id": "B",
+      "name": "Section B",
+      "controller_id": "VR-VLSD",
+      "stations": ["st_b1", "st_b2"]
+    },
+    {
+      "section_id": "C",
+      "name": "Section C",
+      "controller_id": "VR-BL",
+      "stations": ["st_c1", "st_c2"]
+    }
+  ]
+}

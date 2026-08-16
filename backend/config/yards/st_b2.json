@@ -1,0 +1,236 @@
+{
+  "station_id": "st_b2",
+  "station_name": "Section B - Station 2",
+  "canvas": {
+    "width": 1000,
+    "height": 408
+  },
+  "lines": [
+    {
+      "id": "UP_MAIN",
+      "y": 150,
+      "direction": "UP",
+      "from_x": 0,
+      "to_x": 1000
+    },
+    {
+      "id": "DN_MAIN",
+      "y": 250,
+      "direction": "DN",
+      "from_x": 0,
+      "to_x": 1000
+    },
+    {
+      "id": "DN_LOOP",
+      "y": 330,
+      "direction": "COMMON",
+      "from_x": 250,
+      "to_x": 750
+    }
+  ],
+  "turnouts": [
+    {
+      "id": "T1_ST_B2",
+      "from_line": "UP_MAIN",
+      "from_x": 450,
+      "to_line": "DN_LOOP",
+      "to_x": 500
+    },
+    {
+      "id": "T2_ST_B2",
+      "from_line": "DN_LOOP",
+      "from_x": 700,
+      "to_line": "UP_MAIN",
+      "to_x": 800
+    }
+  ],
+  "signals": [
+    {
+      "id": "Outer_Warner_UP_ST_B2",
+      "line": "UP_MAIN",
+      "at_x": 100,
+      "initial_state": "green"
+    },
+    {
+      "id": "Home_UP_ST_B2",
+      "line": "UP_MAIN",
+      "at_x": 250,
+      "initial_state": "red"
+    },
+    {
+      "id": "Starter_UP_ST_B2",
+      "line": "UP_MAIN",
+      "at_x": 800,
+      "initial_state": "green"
+    },
+    {
+      "id": "Adv_Starter_UP_ST_B2",
+      "line": "UP_MAIN",
+      "at_x": 900,
+      "initial_state": "red"
+    },
+    {
+      "id": "Loop_Starter_ST_B2",
+      "line": "DN_LOOP",
+      "at_x": 500,
+      "initial_state": "red"
+    },
+    {
+      "id": "Loop_Exit_ST_B2",
+      "line": "DN_LOOP",
+      "at_x": 700,
+      "initial_state": "green"
+    },
+    {
+      "id": "Outer_Warner_DN_ST_B2",
+      "line": "DN_MAIN",
+      "at_x": 900,
+      "initial_state": "red"
+    },
+    {
+      "id": "Home_DN_ST_B2",
+      "line": "DN_MAIN",
+      "at_x": 750,
+      "initial_state": "green"
+    },
+    {
+      "id": "Starter_DN_ST_B2",
+      "line": "DN_MAIN",
+      "at_x": 450,
+      "initial_state": "green"
+    },
+    {
+      "id": "Adv_Starter_DN_ST_B2",
+      "line": "DN_MAIN",
+      "at_x": 100,
+      "initial_state": "red"
+    }
+  ],
+  "blocks": [
+    {
+      "id": "ST_B2_AB",
+      "next_blocks": [
+        "ST_B2_BC"
+      ],
+      "lines": [
+        {
+          "line": "UP_MAIN",
+          "from_x": 0,
+          "to_x": 450
+        },
+        {
+          "line": "DN_MAIN",
+          "from_x": 0,
+          "to_x": 450
+        }
+      ]
+    },
+    {
+      "id": "ST_B2_BC",
+      "next_blocks": [
+        "ST_B2_CD"
+      ],
+      "lines": [
+        {
+          "line": "UP_MAIN",
+          "from_x": 450,
+          "to_x": 800
+        },
+        {
+          "line": "DN_MAIN",
+          "from_x": 450,
+          "to_x": 800
+        },
+        {
+          "line": "DN_LOOP",
+          "from_x": 250,
+          "to_x": 750
+        }
+      ]
+    },
+    {
+      "id": "ST_B2_CD",
+      "next_blocks": [],
+      "lines": [
+        {
+          "line": "UP_MAIN",
+          "from_x": 800,
+          "to_x": 1000
+        },
+        {
+          "line": "DN_MAIN",
+          "from_x": 800,
+          "to_x": 1000
+        }
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "id": "TC_ST_B2_UP_ENTRY",
+      "line": "UP_MAIN",
+      "from_x": 0,
+      "to_x": 450,
+      "block": "ST_B2_AB"
+    },
+    {
+      "id": "TC_ST_B2_UP_MID",
+      "line": "UP_MAIN",
+      "from_x": 450,
+      "to_x": 800,
+      "block": "ST_B2_BC"
+    },
+    {
+      "id": "TC_ST_B2_UP_EXIT",
+      "line": "UP_MAIN",
+      "from_x": 800,
+      "to_x": 1000,
+      "block": "ST_B2_CD"
+    },
+    {
+      "id": "TC_ST_B2_DN_EXIT",
+      "line": "DN_MAIN",
+      "from_x": 0,
+      "to_x": 450,
+      "block": "ST_B2_AB"
+    },
+    {
+      "id": "TC_ST_B2_DN_MID",
+      "line": "DN_MAIN",
+      "from_x": 450,
+      "to_x": 800,
+      "block": "ST_B2_BC"
+    },
+    {
+      "id": "TC_ST_B2_DN_ENTRY",
+      "line": "DN_MAIN",
+      "from_x": 800,
+      "to_x": 1000,
+      "block": "ST_B2_CD"
+    },
+    {
+      "id": "TC_ST_B2_LOOP",
+      "line": "DN_LOOP",
+      "from_x": 250,
+      "to_x": 750,
+      "block": "ST_B2_BC"
+    }
+  ],
+  "labels": [
+    {
+      "text": "UP MAIN",
+      "x": 10,
+      "y": 140
+    },
+    {
+      "text": "DN MAIN",
+      "x": 10,
+      "y": 270
+    },
+    {
+      "text": "LOOP",
+      "x": 250,
+      "y": 320
+    }
+  ]
+}
