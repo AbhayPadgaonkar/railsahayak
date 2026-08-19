@@ -388,3 +388,35 @@ export async function runWhatIfSimulation(
   }
   return res.json();
 }
+
+export interface AssistantChip {
+  label: string;
+  section?: string | null;
+}
+
+export interface AssistantResponse {
+  answer: string;
+  chips: AssistantChip[];
+}
+
+export async function askAssistant(message: string): Promise<AssistantResponse> {
+  const res = await fetch(`${API_URL}/assistant`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail ?? `Assistant request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function getAssistantPrompts(): Promise<string[]> {
+  const res = await fetch(`${API_URL}/assistant/prompts`);
+  if (!res.ok) {
+    throw new Error(`Failed to load assistant prompts (${res.status})`);
+  }
+  const body = (await res.json()) as { prompts: string[] };
+  return body.prompts;
+}
