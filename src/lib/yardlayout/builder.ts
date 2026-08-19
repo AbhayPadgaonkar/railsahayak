@@ -135,6 +135,11 @@ function validate(schema: YardSchema): void {
         throw new Error(`Block "${b.id}" span on "${span.line}" is outside the line`);
       }
     }
+  }
+
+  // next_blocks may reference blocks declared later in the schema, so validate
+  // every reference only after all block ids are registered.
+  for (const b of schema.blocks) {
     for (const nb of b.next_blocks ?? []) {
       if (!blockIds.has(nb) && nb !== b.id) {
         throw new Error(`Block "${b.id}" next_blocks references unknown block "${nb}"`);
