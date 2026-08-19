@@ -4,3 +4,5 @@ uvicorn
 ortools
 numpy
 websockets
+pytest
+httpx

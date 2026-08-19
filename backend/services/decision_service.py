@@ -254,7 +254,7 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
                 "block_id": train.block_id,
                 "line_id": train.line_id,
                 "train_type": train.train_type,
-                "gradient": train.gradient.dict() if train.gradient else None,
+                "gradient": train.gradient.model_dump() if train.gradient else None,
             }
         )
 
@@ -307,7 +307,7 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
 
     _log_decision_run(
         results,
-        optimized_order=[o.dict() for o in optimized_order] if optimized_order else None,
+        optimized_order=[o.model_dump() for o in optimized_order] if optimized_order else None,
     )
     return SectionDecisionResponse(
         decisions=results,
