@@ -8,6 +8,7 @@ from backend.api.advisory import router as advisory_router
 from backend.api.audit_api import router as audit_router
 from backend.api.crisis_api import router as crisis_router
 from backend.api.whatif_api import router as whatif_router
+from backend.api.chat_api import router as chat_router
 from backend.services.decision_service import (
     SectionDecisionRequest,
     SectionDecisionResponse,
@@ -34,6 +35,7 @@ app.include_router(advisory_router)
 app.include_router(audit_router)
 app.include_router(crisis_router)
 app.include_router(whatif_router)
+app.include_router(chat_router)
 
 
 @app.post("/decision", response_model=SectionDecisionResponse)

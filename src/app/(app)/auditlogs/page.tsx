@@ -28,6 +28,10 @@ const ACTION_LABELS: Record<string, { label: string; cls: string }> = {
     label: "What-If Simulation",
     cls: "bg-violet-900 text-violet-200",
   },
+  assistant_query: {
+    label: "Assistant Query",
+    cls: "bg-cyan-900 text-cyan-200",
+  },
 };
 
 const actionBadge = (action: string) =>
