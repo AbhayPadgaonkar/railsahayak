@@ -170,6 +170,42 @@ export default function CommunicationGateway() {
         return;
       }
 
+      if (message.type === "REPLAY") {
+        const replayed = (message.messages || []) as Array<{
+          from_controller_id?: string;
+          to_controller_id?: string;
+          text?: string;
+        }>;
+        if (replayed.length > 0) {
+          setMessagesByController((prev) => {
+            const next = { ...prev };
+            for (const replay of replayed) {
+              const fromId = replay.from_controller_id || replay.to_controller_id || "system";
+              const text = replay.text || JSON.stringify(replay);
+              next[fromId] = [...(next[fromId] || []), { from: "them", text }];
+            }
+            return next;
+          });
+        }
+        return;
+      }
+
+      if (message.type === "ACK") {
+        if (message.stored) {
+          setMessagesByController((prev) => ({
+            ...prev,
+            system: [
+              ...(prev.system || []),
+              {
+                from: "system",
+                text: `Message stored for ${message.to_controller_id} (offline). It will be delivered on reconnect.`,
+              },
+            ],
+          }));
+        }
+        return;
+      }
+
       if (message.type === "ERROR") {
         setMessagesByController((prev) => ({
           ...prev,

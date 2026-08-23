@@ -55,7 +55,7 @@ Server lifecycle messages:
 - `PRESENCE` — snapshot of currently connected peers (`peers: [...]`).
 - `PEER_JOIN` — broadcast when another controller connects (`controller_id`, `name`, `section`).
 - `PEER_LEAVE` — broadcast when another controller disconnects (`controller_id`).
-- `REPLAY` *(planned)* — buffered messages for a reconnecting controller.
+- `REPLAY` — buffered direct messages sent to a reconnecting controller (`messages: [...]`).
 
 Direct controller-to-controller messages require `to_controller_id` and are relayed with `from_controller_id`, `from_name`, and `from_section`. Set `requires_ack: true` to receive an `ACK`.
 

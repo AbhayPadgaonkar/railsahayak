@@ -52,7 +52,7 @@ python backend/communication/ws_server.py
 
 Default: `ws://localhost:8001`
 
-Controllers must send a `HANDSHAKE` as the first message. The server then sends `HANDSHAKE_ACK`, a `PRESENCE` snapshot of current peers, and live `PEER_JOIN` / `PEER_LEAVE` broadcasts as other controllers connect or disconnect.
+Controllers must send a `HANDSHAKE` as the first message. The server then sends `HANDSHAKE_ACK`, a `PRESENCE` snapshot of current peers, and live `PEER_JOIN` / `PEER_LEAVE` broadcasts as other controllers connect or disconnect. Direct messages sent to an offline controller are buffered and delivered as a `REPLAY` when that controller reconnects.
 
 ### 3) Frontend
 
