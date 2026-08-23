@@ -11,7 +11,7 @@ import {
   Legend,
   ChartOptions,
   ChartData,
-  Plugin, // Import Plugin
+  Plugin,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 
@@ -25,77 +25,87 @@ ChartJS.register(
   Legend
 );
 
+interface Dataset {
+  label: string;
+  data: number[];
+  borderColor: string;
+  backgroundColor: string;
+}
+
+interface LineChartProps {
+  title: string;
+  labels: string[];
+  datasets: Dataset[];
+}
+
 // Plugin to force a non-transparent background color
 const customCanvasBackgroundColor: Plugin<"line"> = {
   id: "customCanvasBackgroundColor",
-  beforeDraw: (chart, args, options) => {
+  beforeDraw: (chart, _args, options) => {
     const { ctx } = chart;
     ctx.save();
     ctx.globalCompositeOperation = "destination-over";
-    ctx.fillStyle = options.color || "#ffffff";
+    ctx.fillStyle = (options as { color?: string }).color || "#ffffff";
     ctx.fillRect(0, 0, chart.width, chart.height);
     ctx.restore();
   },
 };
 
-const LineChart = () => {
+const LineChart = ({ title, labels, datasets }: LineChartProps) => {
   const data: ChartData<"line"> = {
-    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-    datasets: [
-      {
-        label: "Revenue ($)",
-        data: [1200, 1900, 3000, 2500, 3200, 4100, 4700],
-        borderColor: "rgb(54, 162, 235)", // A nice blue
-        backgroundColor: "rgba(54, 162, 235, 0.2)", // Lighter blue fill
-        pointBackgroundColor: "rgb(54, 162, 235)",
-        pointBorderColor: "#fff",
-        pointHoverBackgroundColor: "#fff",
-        pointHoverBorderColor: "rgb(54, 162, 235)",
-        tension: 0.2,
-        fill: true,
-      },
-    ],
+    labels,
+    datasets: datasets.map((ds) => ({
+      label: ds.label,
+      data: ds.data,
+      borderColor: ds.borderColor,
+      backgroundColor: ds.backgroundColor,
+      pointBackgroundColor: ds.borderColor,
+      pointBorderColor: "#fff",
+      pointHoverBackgroundColor: "#fff",
+      pointHoverBorderColor: ds.borderColor,
+      tension: 0.2,
+      fill: true,
+    })),
   };
 
   const options: ChartOptions<"line"> = {
     responsive: true,
     plugins: {
       legend: {
-        display: true,
+        display: datasets.length > 1,
         position: "top",
         labels: {
-          color: "#444444", // Dark text for legend
+          color: "#444444",
         },
       },
       title: {
         display: true,
-        text: "Monthly Revenue Growth",
-        color: "#444444", // Dark text for title
+        text: title,
+        color: "#444444",
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         grid: {
-          color: "rgba(0, 0, 0, 0.1)", // Light grey grid lines
+          color: "rgba(0, 0, 0, 0.1)",
         },
         ticks: {
-          color: "#444444", // Dark text for Y-axis labels
+          color: "#444444",
         },
       },
       x: {
         grid: {
-          color: "rgba(0, 0, 0, 0.1)", // Light grey grid lines
+          color: "rgba(0, 0, 0, 0.1)",
         },
         ticks: {
-          color: "#444444", // Dark text for X-axis labels
+          color: "#444444",
         },
       },
     },
   };
 
   return (
-    // Added bg-white and rounded-xl back for the container
     <div className="p-1 bg-white rounded-xl shadow-md">
       <Line data={data} options={options} plugins={[customCanvasBackgroundColor]} />
     </div>

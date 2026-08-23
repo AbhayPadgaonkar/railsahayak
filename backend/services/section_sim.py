@@ -99,6 +99,7 @@ class SectionSim:
         self.trains: List[SimTrain] = []
         self._elapsed_min = 0.0
         self._last_tick = time.monotonic()
+        self._completed_trains = 0
 
     # ---------- geometry ----------
 
@@ -191,6 +192,7 @@ class SectionSim:
     def _loop_reset(self):
         if not self.trains and all(e["_spawned"] for e in self.schedule):
             self._elapsed_min = 0.0
+            self._completed_trains = 0
             for entry in self.schedule:
                 entry["_spawned"] = False
 
@@ -286,6 +288,7 @@ class SectionSim:
             elif not next_block:
                 # Terminal block cleared — train leaves the line
                 self.trains.remove(train)
+                self._completed_trains += 1
 
         self._loop_reset()
 

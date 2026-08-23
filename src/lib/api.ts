@@ -206,6 +206,37 @@ export async function predictDelay(
   return res.json();
 }
 
+export interface KpiSnapshot {
+  ts: string;
+  active_trains: number;
+  block_utilization_pct: number;
+  average_delay_min: number;
+  punctuality_pct: number;
+  throughput_trains_per_hour: number;
+  advisories: {
+    HIGH: number;
+    MEDIUM: number;
+    LOW: number;
+  };
+  actions: {
+    accept: number;
+    dismiss: number;
+    total: number;
+  };
+}
+
+export interface KpiHistoryResponse {
+  history: KpiSnapshot[];
+}
+
+export async function getKpis(): Promise<KpiHistoryResponse> {
+  const res = await fetch(`${API_URL}/kpis`);
+  if (!res.ok) {
+    throw new Error(`Failed to load KPIs (${res.status})`);
+  }
+  return res.json();
+}
+
 export interface AuditEntry {
   action: string;
   detail: Record<string, unknown>;
