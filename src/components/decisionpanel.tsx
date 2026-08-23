@@ -10,52 +10,22 @@ import {
   LineInfo,
   TrainRequest,
 } from "@/lib/api";
-
-const TRAIN_TYPES = [
-  "VANDE_BHARAT",
-  "RAJDHANI",
-  "SHATABDI",
-  "MAIL_EXPRESS",
-  "PASSENGER",
-  "MEMU",
-  "GOODS",
-  "DEPARTMENTAL",
-];
-
-const SIGNAL_STATES = ["GREEN", "YELLOW", "RED", "DEFECTIVE"];
-
-const CONDITIONS = ["", "FOG", "STORM"];
-
-const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN"];
-
-const ORDERING_LINE = "UP_MAIN"; // used to derive block order / next-block links
-
-const emptyTrain = (block_id: string): TrainRequest => ({
-  train_id: "",
-  train_type: "PASSENGER",
-  block_id,
-  line_id: "UP_MAIN",
-  next_block_id: null,
-  signal_state: "GREEN",
-  sectional_speed: 100,
-  scheduled_time: 1000,
-  current_time: 1000,
-  gradient: null,
-  condition: null,
-  has_written_authority: false,
-});
+import {
+  allowColor,
+  buildDecisionRequest,
+  buildStationModels,
+  CONDITIONS,
+  emptyTrain,
+  LINES,
+  num,
+  SIGNAL_STATES,
+  StationModel,
+  TRAIN_TYPES,
+} from "@/lib/decisionComposer";
 
 const inputCls =
   "w-full rounded-lg bg-slate-950 border border-slate-700 px-2.5 py-1.5 text-sm outline-none focus:border-sky-500 transition-colors";
 const labelCls = "block text-xs text-slate-400 mb-1";
-
-const num = (v: string) => (v === "" ? 0 : Number(v));
-
-interface StationModel {
-  station_id: string;
-  station_name: string;
-  blocks: string[];
-}
 
 const DecisionPanel = () => {
   const [sections, setSections] = useState<LineInfo | null>(null);
@@ -107,45 +77,9 @@ const DecisionPanel = () => {
       .then((loaded) => {
         if (cancelled) return;
 
-        const models: StationModel[] = [];
-        const next: Record<string, string[]> = {};
-        for (const { station_id, schema } of loaded) {
-          if (!schema) continue;
-          // full-line next links follow the ordering line across stations
-          const inStation = schema.blocks.filter((b) =>
-            b.lines.some((s) => s.line === ORDERING_LINE)
-          );
-          const ordered = [...inStation].sort(
-            (a, b) =>
-              a.lines.find((s) => s.line === ORDERING_LINE)!.from_x -
-              b.lines.find((s) => s.line === ORDERING_LINE)!.from_x
-          );
-          const ids = ordered.map((b) => b.id);
-          ids.forEach((id, i) => {
-            next[id] = i + 1 < ids.length ? [ids[i + 1]] : [];
-          });
-          models.push({
-            station_id,
-            station_name: schema.station_name ?? station_id,
-            blocks: ids,
-          });
-        }
-
-        // Cross-station link: last block of a station -> first block of the next
-        // station (mirrors section_sim line traversal on the ordering line).
-        for (let i = 0; i < models.length - 1; i++) {
-          const cur = models[i];
-          const nxt = models[i + 1];
-          if (cur.blocks.length && nxt.blocks.length) {
-            const tail = cur.blocks[cur.blocks.length - 1];
-            const head = nxt.blocks[0];
-            next[tail] = next[tail] ?? [];
-            if (!next[tail].includes(head)) next[tail].push(head);
-          }
-        }
-
+        const { models, blockNext } = buildStationModels(loaded);
         setTransitStations(models);
-        setBlockNext(next);
+        setBlockNext(blockNext);
         setTrains(models[0]?.blocks[0]
           ? [
               emptyTrain(models[0].blocks[0]),
@@ -184,24 +118,13 @@ const DecisionPanel = () => {
   const handleRun = async () => {
     setError(null);
     setLoading(true);
-    const payload: DecisionRequest = {
+    const payload: DecisionRequest = buildDecisionRequest({
       trains,
-      context: {
-        occupied_lines: occupiedLines
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        occupied_turnouts: occupiedTurnouts
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        fouling_segments: foulingSegments
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        disaster_active: disasterActive,
-      },
-    };
+      occupiedLines,
+      occupiedTurnouts,
+      foulingSegments,
+      disasterActive,
+    });
     try {
       setResult(await getDecision(payload));
     } catch (e) {
@@ -210,9 +133,6 @@ const DecisionPanel = () => {
       setLoading(false);
     }
   };
-
-  const allowColor = (allow: boolean) =>
-    allow ? "text-emerald-400" : "text-red-400";
 
   return (
     <div className="flex flex-col gap-4 p-3 h-full overflow-y-auto">
@@ -226,8 +146,9 @@ const DecisionPanel = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className={labelCls}>Section</label>
+          <label className={labelCls} htmlFor="dp-section">Section</label>
           <select
+            id="dp-section"
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value)}
             className={inputCls + " w-auto"}
@@ -288,16 +209,18 @@ const DecisionPanel = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Train ID</label>
+                <label className={labelCls} htmlFor={`train-id-${idx}`}>Train ID</label>
                 <input
+                  id={`train-id-${idx}`}
                   className={inputCls}
                   value={train.train_id}
                   onChange={(e) => updateTrain(idx, { train_id: e.target.value })}
                 />
               </div>
               <div>
-                <label className={labelCls}>Type</label>
+                <label className={labelCls} htmlFor={`train-type-${idx}`}>Type</label>
                 <select
+                  id={`train-type-${idx}`}
                   className={inputCls}
                   value={train.train_type}
                   onChange={(e) =>
@@ -312,8 +235,9 @@ const DecisionPanel = () => {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Block</label>
+                <label className={labelCls} htmlFor={`train-block-${idx}`}>Block</label>
                 <select
+                  id={`train-block-${idx}`}
                   className={inputCls}
                   value={train.block_id}
                   onChange={(e) => handleBlockChange(idx, e.target.value)}
@@ -330,8 +254,9 @@ const DecisionPanel = () => {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Line</label>
+                <label className={labelCls} htmlFor={`train-line-${idx}`}>Line</label>
                 <select
+                  id={`train-line-${idx}`}
                   className={inputCls}
                   value={train.line_id}
                   onChange={(e) => updateTrain(idx, { line_id: e.target.value })}
@@ -344,8 +269,9 @@ const DecisionPanel = () => {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Next Block</label>
+                <label className={labelCls} htmlFor={`train-next-${idx}`}>Next Block</label>
                 <select
+                  id={`train-next-${idx}`}
                   className={inputCls}
                   value={train.next_block_id ?? ""}
                   onChange={(e) =>
@@ -361,8 +287,9 @@ const DecisionPanel = () => {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Signal</label>
+                <label className={labelCls} htmlFor={`train-signal-${idx}`}>Signal</label>
                 <select
+                  id={`train-signal-${idx}`}
                   className={inputCls}
                   value={train.signal_state}
                   onChange={(e) =>
@@ -377,8 +304,9 @@ const DecisionPanel = () => {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Sectional Speed</label>
+                <label className={labelCls} htmlFor={`train-speed-${idx}`}>Sectional Speed</label>
                 <input
+                  id={`train-speed-${idx}`}
                   className={inputCls}
                   type="number"
                   value={train.sectional_speed}
@@ -388,8 +316,9 @@ const DecisionPanel = () => {
                 />
               </div>
               <div>
-                <label className={labelCls}>Condition</label>
+                <label className={labelCls} htmlFor={`train-condition-${idx}`}>Condition</label>
                 <select
+                  id={`train-condition-${idx}`}
                   className={inputCls}
                   value={train.condition ?? ""}
                   onChange={(e) =>
@@ -404,8 +333,9 @@ const DecisionPanel = () => {
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Scheduled Time</label>
+                <label className={labelCls} htmlFor={`train-sched-${idx}`}>Scheduled Time</label>
                 <input
+                  id={`train-sched-${idx}`}
                   className={inputCls}
                   type="number"
                   value={train.scheduled_time}
@@ -415,8 +345,9 @@ const DecisionPanel = () => {
                 />
               </div>
               <div>
-                <label className={labelCls}>Current Time</label>
+                <label className={labelCls} htmlFor={`train-current-${idx}`}>Current Time</label>
                 <input
+                  id={`train-current-${idx}`}
                   className={inputCls}
                   type="number"
                   value={train.current_time}
@@ -426,8 +357,9 @@ const DecisionPanel = () => {
                 />
               </div>
               <div>
-                <label className={labelCls}>Gradient Value</label>
+                <label className={labelCls} htmlFor={`train-gradient-${idx}`}>Gradient Value</label>
                 <input
+                  id={`train-gradient-${idx}`}
                   className={inputCls}
                   type="number"
                   placeholder="none"
@@ -442,8 +374,9 @@ const DecisionPanel = () => {
                 />
               </div>
               <div>
-                <label className={labelCls}>Gradient Direction</label>
+                <label className={labelCls} htmlFor={`train-grad-dir-${idx}`}>Gradient Direction</label>
                 <select
+                  id={`train-grad-dir-${idx}`}
                   className={inputCls}
                   value={train.gradient?.direction ?? "UP"}
                   onChange={(e) =>
@@ -492,10 +425,11 @@ const DecisionPanel = () => {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className={labelCls}>
+            <label className={labelCls} htmlFor="occupied-lines">
               Occupied Lines (comma-separated, block|line)
             </label>
             <input
+              id="occupied-lines"
               className={inputCls}
               value={occupiedLines}
               onChange={(e) => setOccupiedLines(e.target.value)}
@@ -503,8 +437,9 @@ const DecisionPanel = () => {
             />
           </div>
           <div>
-            <label className={labelCls}>Occupied Turnouts</label>
+            <label className={labelCls} htmlFor="occupied-turnouts">Occupied Turnouts</label>
             <input
+              id="occupied-turnouts"
               className={inputCls}
               value={occupiedTurnouts}
               onChange={(e) => setOccupiedTurnouts(e.target.value)}
@@ -512,8 +447,9 @@ const DecisionPanel = () => {
             />
           </div>
           <div>
-            <label className={labelCls}>Fouling Segments</label>
+            <label className={labelCls} htmlFor="fouling-segments">Fouling Segments</label>
             <input
+              id="fouling-segments"
               className={inputCls}
               value={foulingSegments}
               onChange={(e) => setFoulingSegments(e.target.value)}
