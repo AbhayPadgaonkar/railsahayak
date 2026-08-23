@@ -38,6 +38,7 @@ API:
 - `POST /decision` - decision + optimization output
 - `POST /login` / `GET /me` / `POST /logout` - controller auth (demo credentials in `backend/config/users.json`)
 - `GET /sensors` - sensor snapshot
+- `GET /kpis` - railway KPI history (active trains, block utilization, delay, punctuality, throughput, advisories)
 - `GET /yards` - list available yard layouts
 - `GET /yard/{station_id}` - yard layout schema (drives the dynamic yard map; add `<station>.json` under `backend/config/yards/`)
 - `GET /health` - health check

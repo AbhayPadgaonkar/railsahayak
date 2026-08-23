@@ -23,6 +23,13 @@ def recent_actions(limit: int = 50) -> List[dict]:
     return _ACTIONS[-limit:]
 
 
+def action_counts() -> Dict[str, int]:
+    counts: Dict[str, int] = {}
+    for entry in _ACTIONS:
+        counts[entry["action"]] = counts.get(entry["action"], 0) + 1
+    return counts
+
+
 def record_decision(
     train_id: str,
     block_id: str,
