@@ -41,6 +41,24 @@ Demo login credentials are in `backend/config/users.json` (e.g. `CCG-VR` / `ccgv
 python backend/communication/ws_server.py
 ```
 
+### Comms relay protocol
+
+The WebSocket hub runs on port 8001. Controller clients must send a `HANDSHAKE` as the first message:
+
+```json
+{"type":"HANDSHAKE","controller_id":"CCG-VR","name":"Controller CCG-VR","section":"CCG-VR"}
+```
+
+Server lifecycle messages:
+
+- `HANDSHAKE_ACK` — confirms registration.
+- `PRESENCE` — snapshot of currently connected peers (`peers: [...]`).
+- `PEER_JOIN` — broadcast when another controller connects (`controller_id`, `name`, `section`).
+- `PEER_LEAVE` — broadcast when another controller disconnects (`controller_id`).
+- `REPLAY` *(planned)* — buffered messages for a reconnecting controller.
+
+Direct controller-to-controller messages require `to_controller_id` and are relayed with `from_controller_id`, `from_name`, and `from_section`. Set `requires_ack: true` to receive an `ACK`.
+
 ## Testing
 
 | Suite | Command |

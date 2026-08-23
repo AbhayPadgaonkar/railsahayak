@@ -79,3 +79,61 @@ async def test_presence_includes_existing_peer():
             await task
         except asyncio.CancelledError:
             pass
+
+
+@pytest.mark.asyncio
+async def test_peer_join_broadcast():
+    port = 8767
+    task = asyncio.create_task(run_server(port))
+    await asyncio.sleep(0.05)
+
+    try:
+        async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_a:
+            await handshake(ws_a, "CCG-VR", "Controller CCG-VR", "CCG-VR")
+            presence = json.loads(await asyncio.wait_for(ws_a.recv(), timeout=1))
+            assert presence["type"] == "PRESENCE"
+
+            async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_b:
+                await handshake(ws_b, "VR-VLSD", "Controller VR-VLSD", "VR-VLSD")
+                join = json.loads(await asyncio.wait_for(ws_a.recv(), timeout=1))
+                assert join["type"] == "PEER_JOIN"
+                assert join["controller_id"] == "VR-VLSD"
+                assert join["name"] == "Controller VR-VLSD"
+                assert join["section"] == "VR-VLSD"
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+@pytest.mark.asyncio
+async def test_peer_leave_broadcast():
+    port = 8768
+    task = asyncio.create_task(run_server(port))
+    await asyncio.sleep(0.05)
+
+    try:
+        async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_a:
+            await handshake(ws_a, "CCG-VR", "Controller CCG-VR", "CCG-VR")
+            presence = json.loads(await asyncio.wait_for(ws_a.recv(), timeout=1))
+            assert presence["type"] == "PRESENCE"
+
+            ws_b = await websockets.connect(f"ws://127.0.0.1:{port}")
+            try:
+                await handshake(ws_b, "VR-VLSD", "Controller VR-VLSD", "VR-VLSD")
+                join = json.loads(await asyncio.wait_for(ws_a.recv(), timeout=1))
+                assert join["type"] == "PEER_JOIN"
+            finally:
+                await ws_b.close()
+
+            leave = json.loads(await asyncio.wait_for(ws_a.recv(), timeout=1))
+            assert leave["type"] == "PEER_LEAVE"
+            assert leave["controller_id"] == "VR-VLSD"
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
