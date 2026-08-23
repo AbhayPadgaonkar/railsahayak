@@ -88,6 +88,13 @@ async def handle_client(ws: WebSocketServerProtocol):
         hub.register(session)
         await ws.send(json.dumps({"type": "HANDSHAKE_ACK", "controller_id": controller_id}))
 
+        peers = [
+            {"controller_id": s.controller_id, "name": s.name, "section": s.section}
+            for cid, s in hub._sessions.items()
+            if cid != controller_id
+        ]
+        await ws.send(json.dumps({"type": "PRESENCE", "peers": peers}))
+
         async for raw in ws:
             try:
                 message = json.loads(raw)
