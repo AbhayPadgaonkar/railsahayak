@@ -1,7 +1,7 @@
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import websockets
 from websockets.server import WebSocketServerProtocol
@@ -45,6 +45,7 @@ class ControllerSession:
 class ControllerHub:
     def __init__(self):
         self._sessions: Dict[str, ControllerSession] = {}
+        self._mailbox: Dict[str, List[dict]] = {}
 
     def register(self, session: ControllerSession):
         self._sessions[session.controller_id] = session
@@ -54,6 +55,14 @@ class ControllerHub:
 
     def get(self, controller_id: str) -> Optional[ControllerSession]:
         return self._sessions.get(controller_id)
+
+    def store_message(self, controller_id: str, message: dict):
+        """Buffer a message for an offline controller."""
+        self._mailbox.setdefault(controller_id, []).append(message)
+
+    def replay_for(self, controller_id: str) -> List[dict]:
+        """Return and clear buffered messages for a reconnecting controller."""
+        return self._mailbox.pop(controller_id, [])
 
     async def broadcast(
         self, message: dict, exclude: Optional[str] = None
@@ -117,6 +126,9 @@ async def handle_client(ws: WebSocketServerProtocol):
             },
             exclude=controller_id,
         )
+        replay = hub.replay_for(controller_id)
+        if replay:
+            await ws.send(json.dumps({"type": "REPLAY", "messages": replay}))
 
         async for raw in ws:
             try:
@@ -140,9 +152,6 @@ async def handle_client(ws: WebSocketServerProtocol):
                 continue
 
             target = hub.get(to_id)
-            if not target:
-                await ws.send(build_error(f"Controller {to_id} not connected"))
-                continue
 
             relay = {
                 "type": msg_type,
@@ -156,18 +165,20 @@ async def handle_client(ws: WebSocketServerProtocol):
                 "priority": message.get("priority", "ROUTINE"),
                 "context": message.get("context", {}),
             }
-            await target.ws.send(json.dumps(relay))
+            if target:
+                await target.ws.send(json.dumps(relay))
+            else:
+                hub.store_message(to_id, relay)
 
             if message.get("requires_ack"):
-                await ws.send(
-                    json.dumps(
-                        {
-                            "type": "ACK",
-                            "msg_id": message.get("msg_id"),
-                            "to_controller_id": to_id,
-                        }
-                    )
-                )
+                ack = {
+                    "type": "ACK",
+                    "msg_id": message.get("msg_id"),
+                    "to_controller_id": to_id,
+                }
+                if target is None:
+                    ack["stored"] = True
+                await ws.send(json.dumps(ack))
     except websockets.ConnectionClosed:
         pass
     finally:

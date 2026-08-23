@@ -10,8 +10,10 @@ from backend.communication import ws_server
 @pytest.fixture(autouse=True)
 def clear_hub():
     ws_server.hub._sessions.clear()
+    ws_server.hub._mailbox.clear()
     yield
     ws_server.hub._sessions.clear()
+    ws_server.hub._mailbox.clear()
 
 
 async def run_server(port: int):
@@ -131,6 +133,102 @@ async def test_peer_leave_broadcast():
             leave = json.loads(await asyncio.wait_for(ws_a.recv(), timeout=1))
             assert leave["type"] == "PEER_LEAVE"
             assert leave["controller_id"] == "VR-VLSD"
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+@pytest.mark.asyncio
+async def test_offline_message_stored_and_replayed():
+    port = 8769
+    task = asyncio.create_task(run_server(port))
+    await asyncio.sleep(0.05)
+
+    try:
+        async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_sender:
+            await handshake(ws_sender, "CCG-VR", "Controller CCG-VR", "CCG-VR")
+            presence = json.loads(await asyncio.wait_for(ws_sender.recv(), timeout=1))
+            assert presence["type"] == "PRESENCE"
+
+            await ws_sender.send(
+                json.dumps(
+                    {
+                        "type": "CHAT",
+                        "to_controller_id": "VR-VLSD",
+                        "msg_id": "msg-1",
+                        "text": "hello offline",
+                        "requires_ack": True,
+                    }
+                )
+            )
+            ack = json.loads(await asyncio.wait_for(ws_sender.recv(), timeout=1))
+            assert ack["type"] == "ACK"
+            assert ack["stored"] is True
+
+            async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_receiver:
+                await handshake(ws_receiver, "VR-VLSD", "Controller VR-VLSD", "VR-VLSD")
+                recv_presence = json.loads(await asyncio.wait_for(ws_receiver.recv(), timeout=1))
+                assert recv_presence["type"] == "PRESENCE"
+
+                replay = json.loads(await asyncio.wait_for(ws_receiver.recv(), timeout=1))
+                assert replay["type"] == "REPLAY"
+                assert len(replay["messages"]) == 1
+                assert replay["messages"][0]["text"] == "hello offline"
+                assert replay["messages"][0]["from_controller_id"] == "CCG-VR"
+    finally:
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+@pytest.mark.asyncio
+async def test_online_message_not_replayed():
+    port = 8770
+    task = asyncio.create_task(run_server(port))
+    await asyncio.sleep(0.05)
+
+    try:
+        async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_sender:
+            await handshake(ws_sender, "CCG-VR", "Controller CCG-VR", "CCG-VR")
+            sender_presence = json.loads(await asyncio.wait_for(ws_sender.recv(), timeout=1))
+            assert sender_presence["type"] == "PRESENCE"
+
+            async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_receiver:
+                await handshake(ws_receiver, "VR-VLSD", "Controller VR-VLSD", "VR-VLSD")
+                recv_presence = json.loads(await asyncio.wait_for(ws_receiver.recv(), timeout=1))
+                assert recv_presence["type"] == "PRESENCE"
+                join = json.loads(await asyncio.wait_for(ws_sender.recv(), timeout=1))
+                assert join["type"] == "PEER_JOIN"
+
+                await ws_sender.send(
+                    json.dumps(
+                        {
+                            "type": "CHAT",
+                            "to_controller_id": "VR-VLSD",
+                            "msg_id": "msg-2",
+                            "text": "hello live",
+                            "requires_ack": True,
+                        }
+                    )
+                )
+                ack = json.loads(await asyncio.wait_for(ws_sender.recv(), timeout=1))
+                assert ack["type"] == "ACK"
+                assert "stored" not in ack
+
+                relay = json.loads(await asyncio.wait_for(ws_receiver.recv(), timeout=1))
+                assert relay["type"] == "CHAT"
+                assert relay["text"] == "hello live"
+
+        async with websockets.connect(f"ws://127.0.0.1:{port}") as ws_reconnect:
+            await handshake(ws_reconnect, "VR-VLSD", "Controller VR-VLSD", "VR-VLSD")
+            presence = json.loads(await asyncio.wait_for(ws_reconnect.recv(), timeout=1))
+            assert presence["type"] == "PRESENCE"
+            assert ws_server.hub.replay_for("VR-VLSD") == []
     finally:
         task.cancel()
         try:
