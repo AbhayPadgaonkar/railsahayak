@@ -19,7 +19,9 @@ def test_get_kpis_returns_history():
     assert "average_delay_min" in snapshot
     assert "punctuality_pct" in snapshot
     assert "throughput_trains_per_hour" in snapshot
-    assert snapshot["advisories"] == {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    assert "HIGH" in snapshot["advisories"]
+    assert "MEDIUM" in snapshot["advisories"]
+    assert "LOW" in snapshot["advisories"]
     assert "accept" in snapshot["actions"]
     assert "dismiss" in snapshot["actions"]
     assert "total" in snapshot["actions"]

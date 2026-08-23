@@ -1,0 +1,23 @@
+{
+  "feed_id": "demo-feed-001",
+  "description": "Replayable recorded RTIS feed for three trains on the prototype line",
+  "events": [
+    {"offset_seconds": 0, "train_id": "T101", "lat": 19.2100, "lon": 72.8400, "speed": 0},
+    {"offset_seconds": 2, "train_id": "T201", "lat": 19.2300, "lon": 72.8600, "speed": 0},
+    {"offset_seconds": 5, "train_id": "T101", "lat": 19.2110, "lon": 72.8410, "speed": 45},
+    {"offset_seconds": 6, "train_id": "T201", "lat": 19.2310, "lon": 72.8610, "speed": 50},
+    {"offset_seconds": 10, "train_id": "T101", "lat": 19.2130, "lon": 72.8430, "speed": 60},
+    {"offset_seconds": 11, "train_id": "T301", "lat": 19.2500, "lon": 72.8800, "speed": 0},
+    {"offset_seconds": 15, "train_id": "T201", "lat": 19.2330, "lon": 72.8630, "speed": 55},
+    {"offset_seconds": 16, "train_id": "T301", "lat": 19.2510, "lon": 72.8810, "speed": 40},
+    {"offset_seconds": 20, "train_id": "T101", "lat": 19.2150, "lon": 72.8450, "speed": 60},
+    {"offset_seconds": 22, "train_id": "T201", "lat": 19.2350, "lon": 72.8650, "speed": 58},
+    {"offset_seconds": 25, "train_id": "T301", "lat": 19.2530, "lon": 72.8830, "speed": 55},
+    {"offset_seconds": 30, "train_id": "T101", "lat": 19.2170, "lon": 72.8470, "speed": 62},
+    {"offset_seconds": 32, "train_id": "T201", "lat": 19.2370, "lon": 72.8670, "speed": 60},
+    {"offset_seconds": 35, "train_id": "T301", "lat": 19.2550, "lon": 72.8850, "speed": 60},
+    {"offset_seconds": 40, "train_id": "T101", "lat": 19.2190, "lon": 72.8490, "speed": 60},
+    {"offset_seconds": 42, "train_id": "T201", "lat": 19.2390, "lon": 72.8690, "speed": 60},
+    {"offset_seconds": 45, "train_id": "T301", "lat": 19.2570, "lon": 72.8870, "speed": 60}
+  ]
+}
