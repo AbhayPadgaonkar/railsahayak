@@ -39,6 +39,8 @@ API:
 - `POST /login` / `GET /me` / `POST /logout` - controller auth (demo credentials in `backend/config/users.json`)
 - `GET /sensors` - sensor snapshot
 - `GET /kpis` - railway KPI history (active trains, block utilization, delay, punctuality, throughput, advisories)
+- `GET /rtis` - replayable recorded RTIS feed snapshots
+- `POST /rtis/start` - restart the recorded RTIS feed
 - `GET /yards` - list available yard layouts
 - `GET /yard/{station_id}` - yard layout schema (drives the dynamic yard map; add `<station>.json` under `backend/config/yards/`)
 - `GET /health` - health check

@@ -68,6 +68,11 @@ Direct controller-to-controller messages require `to_controller_id` and are rela
 | Frontend tests watch mode | `npm run test:watch` |
 | E2E | `npm run test:e2e` |
 
+### RTIS / recorded feed
+
+- `GET /rtis` replays the demo recorded feed from `backend/config/rtis/demo_feed.json`.
+- `POST /rtis/start` resets the replay to the first event.
+- The global `RTISReplay` instance lives in `backend/services/rtis_replay.py`.
 CI runs three jobs: `frontend`, `backend`, and `e2e`.
 
 ### Frontend test notes
