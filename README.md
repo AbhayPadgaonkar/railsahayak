@@ -81,6 +81,30 @@ Optional override for the WebSocket relay URL:
 NEXT_PUBLIC_COMM_WS_URL=ws://localhost:8001
 ```
 
+## Testing
+
+### Backend
+
+```bash
+python -m pytest
+```
+
+### Frontend
+
+```bash
+npm test                 # unit + component tests (Vitest + React Testing Library)
+npm run test:watch       # Vitest watch mode
+npm run test:e2e         # end-to-end tests (Playwright)
+```
+
+### CI
+
+The GitHub Actions workflow runs three jobs:
+
+- `frontend` — lint, typecheck, build, and Vitest
+- `backend` — compileall and pytest
+- `e2e` — boots the backend and Next dev server, then runs Playwright in Chromium
+
 ## Repository Layout
 
 - `backend/api` - FastAPI decision and sensor endpoints
