@@ -112,7 +112,7 @@ The GitHub Actions workflow runs three jobs:
 - `backend/api` - FastAPI decision and sensor endpoints
 - `backend/rules` - safety and operational rules (signals, tracks, speed, emergency, turnouts)
 - `backend/optimizer` - train order optimization
-- `backend/communication` - TCP mock + WebSocket relay
+- `backend/communication` - WebSocket relay for controller-to-controller messaging
 - `src/components` - dashboard UI panels and live yard layout
 
 ## Notes
