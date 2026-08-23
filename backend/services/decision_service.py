@@ -270,16 +270,6 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
             )
         )
 
-        if "PROCEED" in allowed_actions and train.next_block_id:
-            current_key = f"{train.block_id}|{train.line_id}"
-            next_key = f"{train.next_block_id}|{train.line_id}"
-
-            if current_key in payload.context.occupied_lines:
-                payload.context.occupied_lines.remove(current_key)
-
-            if next_key not in payload.context.occupied_lines:
-                payload.context.occupied_lines.append(next_key)
-
     optimized_order = []
 
     block_groups = {}
