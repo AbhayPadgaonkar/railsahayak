@@ -73,7 +73,7 @@ Open two browser windows with different controller identities:
 - **VR-VLSD**:
 	`http://localhost:3000/?controller_id=VR-VLSD&name=Controller%20VR-VLSD&section=VR-VLSD`
 
-Type a message in one window and it will appear in the other. The peer dropdown shows a green dot when a controller is online and grey when offline.
+Type a message in one window and it will appear in the other. The peer dropdown shows a green dot when a controller is online and grey when offline. Messages sent to an offline controller are buffered and delivered when that controller reconnects.
 
 ## Environment
 

@@ -57,7 +57,7 @@ Server lifecycle messages:
 - `PEER_LEAVE` — broadcast when another controller disconnects (`controller_id`).
 - `REPLAY` — buffered direct messages sent to a reconnecting controller (`messages: [...]`).
 
-Direct controller-to-controller messages require `to_controller_id` and are relayed with `from_controller_id`, `from_name`, and `from_section`. Set `requires_ack: true` to receive an `ACK`.
+Direct controller-to-controller messages require `to_controller_id` and are relayed with `from_controller_id`, `from_name`, and `from_section`. Set `requires_ack: true` to receive an `ACK`; if the recipient is offline the message is buffered and the `ACK` includes `stored: true`. Buffered messages are delivered as a `REPLAY` when the recipient reconnects.
 
 ## Testing
 
