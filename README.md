@@ -52,6 +52,8 @@ python backend/communication/ws_server.py
 
 Default: `ws://localhost:8001`
 
+Controllers must send a `HANDSHAKE` as the first message. The server then sends `HANDSHAKE_ACK`, a `PRESENCE` snapshot of current peers, and live `PEER_JOIN` / `PEER_LEAVE` broadcasts as other controllers connect or disconnect.
+
 ### 3) Frontend
 
 ```bash
@@ -71,7 +73,7 @@ Open two browser windows with different controller identities:
 - **VR-VLSD**:
 	`http://localhost:3000/?controller_id=VR-VLSD&name=Controller%20VR-VLSD&section=VR-VLSD`
 
-Type a message in one window and it will appear in the other.
+Type a message in one window and it will appear in the other. The peer dropdown shows a green dot when a controller is online and grey when offline.
 
 ## Environment
 

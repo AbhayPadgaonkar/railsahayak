@@ -106,7 +106,12 @@ export default function CommunicationGateway() {
       );
     };
 
-    socket.onclose = () => setConnectionStatus("disconnected");
+    socket.onclose = () => {
+      setConnectionStatus("disconnected");
+      setControllers((prev) =>
+        prev.map((controller) => ({ ...controller, status: "offline" }))
+      );
+    };
     socket.onerror = () => setConnectionStatus("error");
 
     socket.onmessage = (event) => {
@@ -125,6 +130,42 @@ export default function CommunicationGateway() {
             ...controller,
             status: onlineIds.has(controller.controller_id) ? "online" : "offline",
           }))
+        );
+        return;
+      }
+
+      if (message.type === "PEER_JOIN") {
+        const joinedId = message.controller_id;
+        setControllers((prev) => {
+          const existing = prev.find((c) => c.controller_id === joinedId);
+          if (existing) {
+            return prev.map((controller) =>
+              controller.controller_id === joinedId
+                ? { ...controller, status: "online" }
+                : controller
+            );
+          }
+          return [
+            ...prev,
+            {
+              controller_id: joinedId,
+              name: message.name || joinedId,
+              section: message.section || joinedId,
+              status: "online",
+            },
+          ];
+        });
+        return;
+      }
+
+      if (message.type === "PEER_LEAVE") {
+        const leftId = message.controller_id;
+        setControllers((prev) =>
+          prev.map((controller) =>
+            controller.controller_id === leftId
+              ? { ...controller, status: "offline" }
+              : controller
+          )
         );
         return;
       }

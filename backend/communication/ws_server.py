@@ -55,6 +55,20 @@ class ControllerHub:
     def get(self, controller_id: str) -> Optional[ControllerSession]:
         return self._sessions.get(controller_id)
 
+    async def broadcast(
+        self, message: dict, exclude: Optional[str] = None
+    ):
+        """Send a message to all connected sessions except the excluded one."""
+        payload = json.dumps(message)
+        targets = [
+            session for cid, session in self._sessions.items() if cid != exclude
+        ]
+        for session in targets:
+            try:
+                await session.ws.send(payload)
+            except websockets.ConnectionClosed:
+                self.unregister(session.controller_id)
+
 
 hub = ControllerHub()
 
@@ -94,6 +108,15 @@ async def handle_client(ws: WebSocketServerProtocol):
             if cid != controller_id
         ]
         await ws.send(json.dumps({"type": "PRESENCE", "peers": peers}))
+        await hub.broadcast(
+            {
+                "type": "PEER_JOIN",
+                "controller_id": controller_id,
+                "name": name,
+                "section": section,
+            },
+            exclude=controller_id,
+        )
 
         async for raw in ws:
             try:
@@ -149,6 +172,13 @@ async def handle_client(ws: WebSocketServerProtocol):
         pass
     finally:
         if controller_id:
+            await hub.broadcast(
+                {
+                    "type": "PEER_LEAVE",
+                    "controller_id": controller_id,
+                },
+                exclude=controller_id,
+            )
             hub.unregister(controller_id)
 
 
