@@ -5,4 +5,5 @@ ortools
 numpy
 websockets
 pytest
+pytest-asyncio
 httpx

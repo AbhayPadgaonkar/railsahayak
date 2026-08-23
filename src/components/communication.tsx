@@ -83,7 +83,7 @@ export default function CommunicationGateway() {
   useEffect(() => {
     const peers = KNOWN_CONTROLLERS.filter(
       (controller) => controller.controller_id !== selfController.controller_id
-    );
+    ).map((controller) => ({ ...controller, status: "offline" as const }));
     setControllers(peers);
     setSelectedController(peers[0] || null);
   }, [selfController]);
@@ -113,6 +113,19 @@ export default function CommunicationGateway() {
       const message = JSON.parse(event.data);
       if (message.type === "HANDSHAKE_ACK") {
         setConnectionStatus("ready");
+        return;
+      }
+
+      if (message.type === "PRESENCE") {
+        const onlineIds = new Set(
+          (message.peers || []).map((p: { controller_id: string }) => p.controller_id)
+        );
+        setControllers((prev) =>
+          prev.map((controller) => ({
+            ...controller,
+            status: onlineIds.has(controller.controller_id) ? "online" : "offline",
+          }))
+        );
         return;
       }
 
