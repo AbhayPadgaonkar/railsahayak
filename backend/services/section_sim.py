@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from backend.engine.train_movement import advance_train
 from backend.services.decision_state import active_decisions
 
 BLOCK_LENGTH_KM = 4.0
@@ -259,8 +260,11 @@ class SectionSim:
             effective_speed = train.speed_kmph
             if decision and decision.get("max_speed"):
                 effective_speed = min(train.speed_kmph, decision["max_speed"])
-            distance_km = (effective_speed * delta_min) / 60
-            train.position += distance_km / BLOCK_LENGTH_KM
+            # Delegate constant-speed progression to the shared engine module.
+            saved_speed = train.speed_kmph
+            train.speed_kmph = effective_speed
+            advance_train(train, delta_min, BLOCK_LENGTH_KM)
+            train.speed_kmph = saved_speed
 
             if train.position < 1.0:
                 continue
