@@ -65,7 +65,7 @@ export const sensorSnapshot = (
   zones: { TC_AB_UP: true },
   signals: {
     SIG_UP_1: "red",
-    SIG_DN_1: "yellow",
+    SIG_DN_1: "single_yellow",
   },
   trains: [
     {

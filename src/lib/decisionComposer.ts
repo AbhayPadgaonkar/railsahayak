@@ -12,7 +12,13 @@ export const TRAIN_TYPES = [
   "DEPARTMENTAL",
 ];
 
-export const SIGNAL_STATES = ["GREEN", "YELLOW", "RED", "DEFECTIVE"];
+export const SIGNAL_STATES = [
+  "GREEN",
+  "DOUBLE_YELLOW",
+  "SINGLE_YELLOW",
+  "RED",
+  "DEFECTIVE",
+];
 
 export const CONDITIONS = ["", "FOG", "STORM"];
 

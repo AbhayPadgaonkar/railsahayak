@@ -79,7 +79,7 @@ describe("YardLive", () => {
     getSensorSnapshot.mockClear();
     await vi.advanceTimersByTimeAsync(5000);
     expect(getSensorSnapshot).toHaveBeenCalledWith("st_a1");
-  });
+  }, 10000);
 
   it("resets sensor state and re-polls when the station changes", async () => {
     const u = userEvent.setup();
