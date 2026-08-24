@@ -67,6 +67,10 @@ Direct controller-to-controller messages require `to_controller_id` and are rela
 | Frontend unit/component tests | `npm test` |
 | Frontend tests watch mode | `npm run test:watch` |
 | E2E | `npm run test:e2e` |
+| Frontend lint | `npm run lint` |
+| Frontend typecheck | `npm run typecheck` |
+| Backend lint | `.venv\Scripts\python.exe -m ruff check backend` |
+| Backend typecheck | `.venv\Scripts\python.exe -m mypy backend --ignore-missing-imports` |
 
 ### RTIS / recorded feed
 

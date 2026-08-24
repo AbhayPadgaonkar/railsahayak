@@ -1,4 +1,3 @@
-from typing import List
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
@@ -15,9 +14,11 @@ class AuditEntry(BaseModel):
 
 
 class AuditLogResponse(BaseModel):
-    logs: List[AuditEntry]
+    logs: list[AuditEntry]
 
 
 @router.get("/auditlogs", response_model=AuditLogResponse)
 def get_audit_logs(limit: int = Query(default=50, ge=1, le=200)):
-    return AuditLogResponse(logs=recent_actions(limit))
+    return AuditLogResponse(
+        logs=[AuditEntry(**entry) for entry in recent_actions(limit)]
+    )

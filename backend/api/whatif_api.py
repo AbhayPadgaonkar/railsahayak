@@ -1,4 +1,3 @@
-from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -16,8 +15,8 @@ class ScenarioOption(BaseModel):
 
 
 class ScenariosResponse(BaseModel):
-    scenarios: List[ScenarioOption]
-    trains: List[dict]
+    scenarios: list[ScenarioOption]
+    trains: list[dict]
 
 
 class WhatIfRunRequest(BaseModel):
@@ -27,12 +26,12 @@ class WhatIfRunRequest(BaseModel):
     line_id: str
     sectional_speed: int
     scenario_type: str
-    parameter: Optional[float] = None
+    parameter: float | None = None
     direction: str = "UP"
     scheduled_time: int = 1000
     current_time: int = 1000
-    gradient: Optional[dict] = None
-    condition: Optional[str] = None
+    gradient: dict | None = None
+    condition: str | None = None
 
 
 class WhatIfRunResponse(BaseModel):

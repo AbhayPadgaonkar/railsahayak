@@ -1,18 +1,17 @@
-from typing import List, Optional
 
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-from backend.rules.signals import check_signal_permission
-from backend.rules.tracks import check_line_entry, check_fouling
-from backend.rules.speed import determine_speed_limit
-from backend.rules.emergency import emergency_mode_decision
-from backend.rules.turnouts import check_turnout_conflict
 from backend.domain.trains import TrainType, build_train_profile
 from backend.optimizer.section_optimizer import optimize_train_order
-from backend.services.route_service import RouteService
-from backend.services.decision_state import record_decision, record_action
+from backend.rules.emergency import emergency_mode_decision
+from backend.rules.signals import check_signal_permission
+from backend.rules.speed import determine_speed_limit
+from backend.rules.tracks import check_fouling, check_line_entry
+from backend.rules.turnouts import check_turnout_conflict
 from backend.services.crisis_state import disaster_active
+from backend.services.decision_state import record_action, record_decision
+from backend.services.route_service import RouteService
 
 route_service = RouteService(section_id="section_A")
 
@@ -28,7 +27,7 @@ class TrainRequest(BaseModel):
 
     block_id: str
     line_id: str
-    next_block_id: Optional[str] = None
+    next_block_id: str | None = None
 
     signal_state: str
     sectional_speed: int
@@ -36,43 +35,43 @@ class TrainRequest(BaseModel):
     scheduled_time: int
     current_time: int
 
-    gradient: Optional[Gradient] = None
-    condition: Optional[str] = None
+    gradient: Gradient | None = None
+    condition: str | None = None
     has_written_authority: bool = False
 
 
 class SystemContext(BaseModel):
-    occupied_lines: List[str]
-    occupied_turnouts: List[str]
-    fouling_segments: List[str]
+    occupied_lines: list[str]
+    occupied_turnouts: list[str]
+    fouling_segments: list[str]
     disaster_active: bool = False
 
 
 class SectionDecisionRequest(BaseModel):
-    trains: List[TrainRequest]
+    trains: list[TrainRequest]
     context: SystemContext
 
 
 class DecisionResponse(BaseModel):
     train_id: str
     allow_movement: bool
-    allowed_actions: List[str]
-    max_speed: Optional[int]
-    reasons: List[str]
+    allowed_actions: list[str]
+    max_speed: int | None
+    reasons: list[str]
 
 
 class OptimizedOrder(BaseModel):
     train_id: str
     order: int
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 class SectionDecisionResponse(BaseModel):
-    decisions: List[DecisionResponse]
-    optimized_order: Optional[List[OptimizedOrder]] = None
+    decisions: list[DecisionResponse]
+    optimized_order: list[OptimizedOrder] | None = None
 
 
-def _log_decision_run(results: List[DecisionResponse], optimized_order=None):
+def _log_decision_run(results: list[DecisionResponse], optimized_order=None):
     """Record an audit trail entry for a completed /decision run."""
     record_action(
         "decision_run",
@@ -270,14 +269,14 @@ def make_decision(payload: SectionDecisionRequest) -> SectionDecisionResponse:
             )
         )
 
-    optimized_order = []
+    optimized_order: list[OptimizedOrder] = []
 
-    block_groups = {}
+    block_groups: dict[str, list[dict]] = {}
     for item in optimizer_input:
         block_groups.setdefault(item["block_id"], []).append(item)
 
     for trains_in_block in block_groups.values():
-        line_groups = {}
+        line_groups: dict[str, list[dict]] = {}
         for t in trains_in_block:
             line_groups.setdefault(t["line_id"], []).append(t)
 

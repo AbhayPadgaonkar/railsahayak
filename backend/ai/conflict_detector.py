@@ -1,17 +1,17 @@
-from typing import List, Dict
+
 from backend.ai.conflict_schema import Conflict, ConflictType, RiskLevel
 from backend.domain.trains import TrainProfile
 
 
 def detect_conflicts(
-    train_profiles: List[TrainProfile],
-    intended_blocks: Dict[str, str],  # train_id → next_block
-    gradients: Dict[str, dict],        # block_id → gradient metadata
+    train_profiles: list[TrainProfile],
+    intended_blocks: dict[str, str],  # train_id → next_block
+    gradients: dict[str, dict],        # block_id → gradient metadata
 ):
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
 
     # 1️⃣ BLOCK CONTENTION
-    block_usage = {}
+    block_usage: dict[str, list[str]] = {}
     for train_id, block_id in intended_blocks.items():
         block_usage.setdefault(block_id, []).append(train_id)
 
@@ -30,6 +30,8 @@ def detect_conflicts(
     # 2️⃣ GRADIENT RISK (goods on steep gradient)
     for profile in train_profiles:
         block = intended_blocks.get(profile.train_id)
+        if not block:
+            continue
         gradient = gradients.get(block)
 
         if (

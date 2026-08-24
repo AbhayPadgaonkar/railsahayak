@@ -1,6 +1,6 @@
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Dict, List
 
 from backend.services.kpi_state import get_history, record_snapshot
 
@@ -31,7 +31,7 @@ class KpiSnapshot(BaseModel):
 
 
 class KpiHistoryResponse(BaseModel):
-    history: List[KpiSnapshot]
+    history: list[KpiSnapshot]
 
 
 @router.get("/kpis", response_model=KpiHistoryResponse)

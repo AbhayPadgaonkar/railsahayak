@@ -1,5 +1,4 @@
 from types import SimpleNamespace
-from typing import Dict, List, Optional
 
 from backend.domain.trains import TrainType, build_train_profile
 from backend.ml.delay_predictor import DelayPredictor
@@ -8,7 +7,7 @@ from backend.rules.signals import check_signal_permission
 from backend.rules.speed import determine_speed_limit
 from backend.services.decision_state import record_action
 
-SCENARIOS: Dict[str, dict] = {
+SCENARIOS: dict[str, dict] = {
     "FOG": {
         "label": "Fog / poor visibility",
         "description": "Caution orders cap speed to 60 km/h; delay model adds a fog penalty.",
@@ -36,7 +35,7 @@ SCENARIOS: Dict[str, dict] = {
 }
 
 
-def scenario_options() -> List[dict]:
+def scenario_options() -> list[dict]:
     return [
         {"id": sid, "label": spec["label"], "description": spec["description"]}
         for sid, spec in SCENARIOS.items()
@@ -57,9 +56,9 @@ def _block_transit_delta(base_speed: int, scen_speed: int) -> float:
 def _features(
     train_type: str,
     sectional_speed: int,
-    condition: Optional[str],
-    gradient: Optional[Dict],
-) -> Dict:
+    condition: str | None,
+    gradient: dict | None,
+) -> dict:
     profile = build_train_profile(
         train_id="",
         train_type=TrainType[train_type],
@@ -76,8 +75,8 @@ def _features(
 def _predicted_delay(
     train_type: str,
     sectional_speed: int,
-    condition: Optional[str],
-    gradient: Optional[Dict],
+    condition: str | None,
+    gradient: dict | None,
 ) -> float:
     return round(
         DelayPredictor().predict(
@@ -88,7 +87,7 @@ def _predicted_delay(
 
 
 def _speed_verdict(
-    sectional_speed: int, condition: Optional[str], gradient: Optional[Dict]
+    sectional_speed: int, condition: str | None, gradient: dict | None
 ) -> dict:
     g = (
         SimpleNamespace(value=gradient["value"], direction=gradient["direction"])
@@ -111,12 +110,12 @@ def run_scenario(
     line_id: str,
     sectional_speed: int,
     scenario_type: str,
-    parameter: Optional[float] = None,
+    parameter: float | None = None,
     direction: str = "UP",
     scheduled_time: int = 1000,
     current_time: int = 1000,
-    gradient: Optional[Dict] = None,
-    condition: Optional[str] = None,
+    gradient: dict | None = None,
+    condition: str | None = None,
 ) -> dict:
     """Simulate a what-if: compare baseline vs a perturbed run of one train.
 

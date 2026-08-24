@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
+
 from backend.domain.route_models import Route
 
 
 class RouteService:
     def __init__(self, section_id: str):
-        self.routes = {}
+        self.routes: dict[tuple[str, str], Route] = {}
         self._load(section_id)
 
     def _load(self, section_id: str):

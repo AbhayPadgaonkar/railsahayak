@@ -1,10 +1,9 @@
 import time
-from typing import Dict, List
 
 TTL_SECONDS = 180.0
 
-_ACTIVE: Dict[str, dict] = {}
-_ACTIONS: List[dict] = []
+_ACTIVE: dict[str, dict] = {}
+_ACTIONS: list[dict] = []
 
 
 def record_action(action: str, detail: dict):
@@ -19,12 +18,12 @@ def record_action(action: str, detail: dict):
         _ACTIONS[:] = _ACTIONS[-200:]
 
 
-def recent_actions(limit: int = 50) -> List[dict]:
+def recent_actions(limit: int = 50) -> list[dict]:
     return _ACTIONS[-limit:]
 
 
-def action_counts() -> Dict[str, int]:
-    counts: Dict[str, int] = {}
+def action_counts() -> dict[str, int]:
+    counts: dict[str, int] = {}
     for entry in _ACTIONS:
         counts[entry["action"]] = counts.get(entry["action"], 0) + 1
     return counts
@@ -49,7 +48,7 @@ def record_decision(
     }
 
 
-def active_decisions() -> List[dict]:
+def active_decisions() -> list[dict]:
     now = time.monotonic()
     stale = [k for k, d in _ACTIVE.items() if now - d["updated_at"] > TTL_SECONDS]
     for k in stale:

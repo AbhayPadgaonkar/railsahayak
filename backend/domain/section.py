@@ -1,17 +1,16 @@
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
 class Block:
     block_id: str
-    next_blocks: List[str]
+    next_blocks: list[str]
 
 
 @dataclass
 class Section:
     section_id: str
-    blocks: List[Block]
+    blocks: list[Block]
 
     def get_next_block(self, block_id: str) -> str | None:
         for b in self.blocks:

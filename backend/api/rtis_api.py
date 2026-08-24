@@ -1,6 +1,6 @@
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List
 
 from backend.services.rtis_replay import rtis_replay
 
@@ -17,7 +17,7 @@ class RTISFeedSnapshot(BaseModel):
 class RTISResponse(BaseModel):
     elapsed_seconds: float
     finished: bool
-    feeds: List[RTISFeedSnapshot]
+    feeds: list[RTISFeedSnapshot]
 
 
 @router.get("/rtis", response_model=RTISResponse)

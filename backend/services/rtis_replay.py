@@ -1,10 +1,8 @@
 import json
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from backend.simulation.rtis import RTISFeed
-
 
 DEFAULT_FEED_PATH = Path(__file__).resolve().parent.parent / "config" / "rtis" / "demo_feed.json"
 
@@ -17,11 +15,11 @@ class RTISReplay:
     known position/speed for every train seen so far.
     """
 
-    def __init__(self, feed_path: Optional[Path] = None):
+    def __init__(self, feed_path: Path | None = None):
         self.feed_path = feed_path or DEFAULT_FEED_PATH
-        self._events: List[dict] = []
-        self._feeds: Dict[str, RTISFeed] = {}
-        self._start_time: Optional[float] = None
+        self._events: list[dict] = []
+        self._feeds: dict[str, RTISFeed] = {}
+        self._start_time: float | None = None
         self._index = 0
         self._load()
 
@@ -58,7 +56,7 @@ class RTISReplay:
             )
             self._index += 1
 
-    def snapshots(self) -> List[dict]:
+    def snapshots(self) -> list[dict]:
         """Return current snapshots for all tracked trains."""
         self.tick()
         return [feed.snapshot() for feed in self._feeds.values()]

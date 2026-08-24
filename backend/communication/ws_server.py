@@ -1,11 +1,9 @@
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 import websockets
-from websockets.server import WebSocketServerProtocol
-
+from websockets.server import WebSocketServerProtocol  # type: ignore[attr-defined]
 
 ALLOWED_TYPES = {
     "HANDSHAKE",
@@ -44,8 +42,8 @@ class ControllerSession:
 
 class ControllerHub:
     def __init__(self):
-        self._sessions: Dict[str, ControllerSession] = {}
-        self._mailbox: Dict[str, List[dict]] = {}
+        self._sessions: dict[str, ControllerSession] = {}
+        self._mailbox: dict[str, list[dict]] = {}
 
     def register(self, session: ControllerSession):
         self._sessions[session.controller_id] = session
@@ -53,19 +51,19 @@ class ControllerHub:
     def unregister(self, controller_id: str):
         self._sessions.pop(controller_id, None)
 
-    def get(self, controller_id: str) -> Optional[ControllerSession]:
+    def get(self, controller_id: str) -> ControllerSession | None:
         return self._sessions.get(controller_id)
 
     def store_message(self, controller_id: str, message: dict):
         """Buffer a message for an offline controller."""
         self._mailbox.setdefault(controller_id, []).append(message)
 
-    def replay_for(self, controller_id: str) -> List[dict]:
+    def replay_for(self, controller_id: str) -> list[dict]:
         """Return and clear buffered messages for a reconnecting controller."""
         return self._mailbox.pop(controller_id, [])
 
     async def broadcast(
-        self, message: dict, exclude: Optional[str] = None
+        self, message: dict, exclude: str | None = None
     ):
         """Send a message to all connected sessions except the excluded one."""
         payload = json.dumps(message)

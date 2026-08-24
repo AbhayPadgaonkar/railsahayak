@@ -1,5 +1,5 @@
-from backend.engine.train_movement import advance_train
 from backend.engine.block_release import release_line_if_cleared
+from backend.engine.train_movement import advance_train
 
 
 def section_tick(train_states, blocks, occupied_lines, delta_minutes=1):
