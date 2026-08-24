@@ -1,12 +1,10 @@
 import time
 
+from backend.database import get_client
 from backend.services.decision_state import record_action
 
 SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 
-# Crisis catalog: each type knows its label, whether it is a line-wide
-# disaster (forces the emergency rule across every /decision), and the
-# default controller action.
 CRISIS_TYPES: dict[str, dict] = {
     "NATURAL_DISASTER": {
         "label": "Natural Disaster",
@@ -62,8 +60,28 @@ _CATALOG_ORDER = [
     "CROSSING_ACCIDENT",
 ]
 
-_CRISES: list[dict] = []
-_COUNTER = 0
+
+def _to_dict(crisis) -> dict:
+    return {
+        "id": crisis.crisis_id,
+        "type": crisis.type,
+        "label": crisis.label,
+        "is_disaster": crisis.is_disaster,
+        "severity": crisis.severity,
+        "location": crisis.location,
+        "block_id": crisis.block_id,
+        "description": crisis.description,
+        "status": crisis.status,
+        "declared_at": crisis.declared_at,
+        "resolved_at": crisis.resolved_at,
+    }
+
+
+def _next_crisis_id() -> str:
+    db = get_client()
+    last = db.crisis.find_first(order={"id": "desc"})
+    n = (last.id if last else 0) + 1
+    return f"crisis-{n}"
 
 
 def crisis_types() -> list[dict]:
@@ -75,10 +93,10 @@ def crisis_types() -> list[dict]:
 
 
 def disaster_active() -> bool:
-    """True while a line-wide disaster crisis is active. The decision engine
-    consults this so a declared disaster holds trains even if a caller did not
-    set `disaster_active` in the request context."""
-    return any(c["status"] == "ACTIVE" and c["is_disaster"] for c in _CRISES)
+    db = get_client()
+    return db.crisis.find_first(
+        where={"status": "ACTIVE", "is_disaster": True}
+    ) is not None
 
 
 def declare_crisis(
@@ -88,68 +106,77 @@ def declare_crisis(
     block_id: str | None,
     description: str | None,
 ) -> dict:
-    """Declare a crisis, log it to the audit trail, and return the record.
-
-    `location` is a station id; `block_id` narrows the impact to a specific
-    block inside that station (optional). Affected trains are computed live
-    by the API layer via the sim."""
     meta = CRISIS_TYPES.get(crisis_type)
     if meta is None:
         raise ValueError(f"Unknown crisis type '{crisis_type}'")
 
-    global _COUNTER
-    _COUNTER += 1
-    crisis = {
-        "id": f"crisis-{_COUNTER}",
-        "type": crisis_type,
-        "label": meta["label"],
-        "is_disaster": meta["is_disaster"],
-        "severity": severity or meta["default_severity"],
-        "location": location,
-        "block_id": block_id,
-        "description": description or meta["default_action"],
-        "status": "ACTIVE",
-        "declared_at": time.strftime("%H:%M:%S"),
-        "resolved_at": None,
-    }
-    _CRISES.append(crisis)
+    crisis_id = _next_crisis_id()
+    db = get_client()
+    crisis = db.crisis.create(
+        data={
+            "crisis_id": crisis_id,
+            "type": crisis_type,
+            "label": meta["label"],
+            "is_disaster": meta["is_disaster"],
+            "severity": severity or meta["default_severity"],
+            "location": location,
+            "block_id": block_id,
+            "description": description or meta["default_action"],
+            "status": "ACTIVE",
+            "declared_at": time.strftime("%H:%M:%S"),
+            "resolved_at": None,
+        }
+    )
 
     record_action(
         "crisis_declare",
         {
-            "crisis_id": crisis["id"],
+            "crisis_id": crisis.crisis_id,
             "type": crisis_type,
-            "severity": crisis["severity"],
+            "severity": crisis.severity,
             "location": location,
             "block_id": block_id,
-            "description": crisis["description"],
+            "description": crisis.description,
             "is_disaster": meta["is_disaster"],
         },
     )
-    return crisis
+    return _to_dict(crisis)
 
 
 def resolve_crisis(crisis_id: str) -> dict | None:
-    for crisis in _CRISES:
-        if crisis["id"] == crisis_id:
-            crisis["status"] = "RESOLVED"
-            crisis["resolved_at"] = time.strftime("%H:%M:%S")
-            record_action(
-                "crisis_resolve",
-                {
-                    "crisis_id": crisis_id,
-                    "type": crisis["type"],
-                    "resolved_at": crisis["resolved_at"],
-                },
-            )
-            return crisis
-    return None
+    db = get_client()
+    existing = db.crisis.find_unique(where={"crisis_id": crisis_id})
+    if existing is None:
+        return None
+
+    resolved_at = time.strftime("%H:%M:%S")
+    crisis = db.crisis.update(
+        where={"crisis_id": crisis_id},
+        data={"status": "RESOLVED", "resolved_at": resolved_at},
+    )
+    if crisis is None:
+        return None
+
+    record_action(
+        "crisis_resolve",
+        {
+            "crisis_id": crisis_id,
+            "type": crisis.type,
+            "resolved_at": resolved_at,
+        },
+    )
+    return _to_dict(crisis)
 
 
 def list_crises() -> list[dict]:
-    """All crises, newest first."""
-    return list(reversed(_CRISES))
+    db = get_client()
+    rows = db.crisis.find_many(order={"id": "desc"})
+    return [_to_dict(row) for row in rows]
 
 
 def active_crises() -> list[dict]:
-    return [c for c in _CRISES if c["status"] == "ACTIVE"]
+    db = get_client()
+    rows = db.crisis.find_many(
+        where={"status": "ACTIVE"}, order={"id": "desc"}
+    )
+    return [_to_dict(row) for row in rows]

@@ -7,3 +7,4 @@ websockets
 pytest
 pytest-asyncio
 httpx
+prisma

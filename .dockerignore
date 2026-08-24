@@ -8,8 +8,7 @@ build
 coverage
 *.tsbuildinfo
 .env*
-!.env.example
-backend
+!\.env.example
 roadmap.md
 Dockerfile
 docker-compose.yml

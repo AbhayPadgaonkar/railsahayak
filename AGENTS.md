@@ -95,6 +95,15 @@ CI runs three jobs: `frontend`, `backend`, and `e2e`.
 - CI spins up the backend (`uvicorn`) and Next dev server via Playwright `webServer`.
 - Backend CORS allows both `http://localhost:3000` and `http://127.0.0.1:3000`.
 
+## Persistence layer
+
+- PostgreSQL database, managed by **Prisma Client Python** using a sync client.
+- Schema lives in `backend/prisma/schema.prisma`; run `prisma generate --schema backend/prisma/schema.prisma` after schema changes.
+- Connection is configured via the `DATABASE_URL` environment variable (defaults to `postgresql://postgres:postgres@localhost:5432/railsahayak`).
+- `docker-compose.yml` includes a `db` service and mounts `backend/prisma/init-db.sql` to create the `railsahayak_test` database.
+- Tables: `Decision`, `AuditAction`, `Crisis`, `Session`.
+- `backend/conftest.py` points tests at `DATABASE_URL_TEST` (defaults to `postgresql://postgres:postgres@localhost:5432/railsahayak_test`) and truncates tables before each test.
+
 ## Common gotchas
 
 - `package-lock.json` is managed by npm 11 (Node 24). If `npm ci` fails with `Invalid Version:`, delete `node_modules` and `package-lock.json` and run `npm install` to regenerate.

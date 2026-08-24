@@ -1,16 +1,16 @@
 import json
+import time
 import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
+from backend.database import get_client
+
 router = APIRouter()
 
 USERS_PATH = Path(__file__).resolve().parent.parent / "config" / "users.json"
-
-# Demo-only auth: plaintext credentials in config, tokens kept in memory
-_active_tokens: dict = {}
 
 
 def _load_users() -> list:
@@ -33,10 +33,15 @@ def _session_from_token(authorization: str | None) -> dict:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
     token = authorization.removeprefix("Bearer ").strip()
-    session = _active_tokens.get(token)
-    if not session:
+    db = get_client()
+    session = db.session.find_unique(where={"token": token})
+    if session is None:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return session
+    return {
+        "controller_id": session.controller_id,
+        "name": session.name,
+        "section": session.section,
+    }
 
 
 @router.post("/login", response_model=SessionResponse)
@@ -59,7 +64,16 @@ def login(payload: LoginRequest):
         "name": user["name"],
         "section": user["section"],
     }
-    _active_tokens[token] = session
+    db = get_client()
+    db.session.create(
+        data={
+            "token": token,
+            "controller_id": session["controller_id"],
+            "name": session["name"],
+            "section": session["section"],
+            "created_at": time.time(),
+        }
+    )
     return SessionResponse(token=token, **session)
 
 
@@ -71,5 +85,7 @@ def me(authorization: str | None = Header(default=None)):
 @router.post("/logout")
 def logout(authorization: str | None = Header(default=None)):
     if authorization and authorization.startswith("Bearer "):
-        _active_tokens.pop(authorization.removeprefix("Bearer ").strip(), None)
+        token = authorization.removeprefix("Bearer ").strip()
+        db = get_client()
+        db.session.delete_many(where={"token": token})
     return {"status": "logged out"}
