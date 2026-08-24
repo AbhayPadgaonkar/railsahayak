@@ -120,6 +120,10 @@ The GitHub Actions workflow runs three jobs:
 - `backend/communication` - WebSocket relay for controller-to-controller messaging
 - `src/components` - dashboard UI panels and live yard layout
 
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for the production runbook, environment variables, health checks, and Docker Compose instructions.
+
 ## Notes
 
 - Train types supported: `VANDE_BHARAT`, `RAJDHANI`, `SHATABDI`, `MAIL_EXPRESS`, `PASSENGER`, `MEMU`, `GOODS`, `DEPARTMENTAL`.

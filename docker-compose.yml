@@ -7,8 +7,11 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - api
-      - comms
+      api:
+        condition: service_healthy
+      comms:
+        condition: service_started
+    restart: unless-stopped
 
   api:
     build:
@@ -16,6 +19,13 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
 
   comms:
     build:
@@ -24,3 +34,4 @@ services:
     command: ["python", "backend/communication/ws_server.py"]
     ports:
       - "8001:8001"
+    restart: unless-stopped
