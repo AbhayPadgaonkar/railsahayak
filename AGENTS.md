@@ -17,6 +17,8 @@ Agent-focused notes for working in this repo.
 
 ## Running locally
 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Docker Compose deployment instructions.
+
 ### Backend API
 
 ```bash
