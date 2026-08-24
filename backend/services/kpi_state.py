@@ -1,6 +1,5 @@
 import time
 from dataclasses import asdict, dataclass
-from typing import Dict, List
 
 from backend.api.advisory import _build_advisories
 from backend.services.decision_state import action_counts
@@ -17,11 +16,11 @@ class KpiSnapshot:
     average_delay_min: float
     punctuality_pct: float
     throughput_trains_per_hour: float
-    advisories: Dict[str, int]
-    actions: Dict[str, int]
+    advisories: dict[str, int]
+    actions: dict[str, int]
 
 
-_HISTORY: List[KpiSnapshot] = []
+_HISTORY: list[KpiSnapshot] = []
 
 
 def _now_iso() -> str:
@@ -54,7 +53,7 @@ def _compute_metrics() -> KpiSnapshot:
     try:
         for advisory in _build_advisories():
             advisories[advisory.priority] = advisories.get(advisory.priority, 0) + 1
-    except Exception:
+    except (ValueError, KeyError, TypeError, AttributeError):
         pass
 
     counts = action_counts()
@@ -84,7 +83,7 @@ def record_snapshot() -> KpiSnapshot:
     return snapshot
 
 
-def get_history() -> List[dict]:
+def get_history() -> list[dict]:
     return [asdict(s) for s in _HISTORY]
 
 

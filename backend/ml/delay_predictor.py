@@ -1,5 +1,3 @@
-import numpy as np
-from typing import Dict
 
 
 class DelayPredictor:
@@ -19,7 +17,7 @@ class DelayPredictor:
         }
         self.bias = 2.0
 
-    def predict(self, features: Dict) -> float:
+    def predict(self, features: dict) -> float:
         delay = self.bias
         for key, value in features.items():
             delay += self.weights.get(key, 0) * value

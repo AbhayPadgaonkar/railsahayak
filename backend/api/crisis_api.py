@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -35,28 +34,28 @@ class Crisis(BaseModel):
     is_disaster: bool
     severity: str
     location: str
-    block_id: Optional[str] = None
+    block_id: str | None = None
     description: str
     status: str
     declared_at: str
-    resolved_at: Optional[str] = None
-    affected_trains: List[str] = []
-    station_name: Optional[str] = None
+    resolved_at: str | None = None
+    affected_trains: list[str] = []
+    station_name: str | None = None
 
 
 class CrisisListResponse(BaseModel):
     disaster_active: bool
-    types: List[CrisisTypeInfo]
-    stations: List[dict]
-    crises: List[Crisis]
+    types: list[CrisisTypeInfo]
+    stations: list[dict]
+    crises: list[Crisis]
 
 
 class DeclareCrisisRequest(BaseModel):
     crisis_type: str
-    severity: Optional[str] = None
+    severity: str | None = None
     location: str
-    block_id: Optional[str] = None
-    description: Optional[str] = None
+    block_id: str | None = None
+    description: str | None = None
 
 
 class CrisisResponse(BaseModel):
@@ -76,12 +75,12 @@ def _yard_meta() -> dict:
     return entries
 
 
-def _stations() -> List[dict]:
+def _stations() -> list[dict]:
     line_cfg = json.loads((CONFIG / "sections.json").read_text(encoding="utf-8"))
     return [{"station_id": sid, "name": _yard_meta().get(sid, sid)} for sid in line_cfg["line_order"]]
 
 
-def _affected_trains(location: str, block_id: Optional[str] = None) -> List[str]:
+def _affected_trains(location: str, block_id: str | None = None) -> list[str]:
     section_sim.tick()
     result = []
     for t in section_sim.trains:

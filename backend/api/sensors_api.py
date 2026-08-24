@@ -79,15 +79,13 @@ def get_sensor_snapshot(station: str = Query(default=DEFAULT_STATION)):
     # block along the line's traversal is occupied (cross-station: the block in
     # the following station, or a train approaching on the same line).
     def is_red(section_id: str) -> bool:
-        if section_id in zones and zones[section_id]:
+        if zones.get(section_id):
             return True
         section = next((s for s in sections if s["id"] == section_id), None)
         if not section:
             return False
         nxt = section_sim._next_block_after(section["line"], section["block"])
-        if nxt and f"{nxt}|{section['line']}" in occupied_keys:
-            return True
-        return False
+        return bool(nxt and f"{nxt}|{section['line']}" in occupied_keys)
 
     signals = {}
     for signal in yard.get("signals", []):

@@ -1,5 +1,5 @@
-from fastapi import HTTPException
 import pytest
+from fastapi import HTTPException
 
 from backend.services.decision_service import (
     Gradient,
@@ -14,31 +14,31 @@ LINE = "PROTO_LINE"
 
 
 def _train(**overrides):
-    base = dict(
-        train_id="UP-999",
-        train_type="MAIL_EXPRESS",
-        block_id=BLOCK,
-        line_id=LINE,
-        next_block_id="ST_A1_BC",
-        signal_state="GREEN",
-        sectional_speed=100,
-        scheduled_time=1000,
-        current_time=1000,
-        gradient=None,
-        condition=None,
-        has_written_authority=False,
-    )
+    base = {
+        "train_id": "UP-999",
+        "train_type": "MAIL_EXPRESS",
+        "block_id": BLOCK,
+        "line_id": LINE,
+        "next_block_id": "ST_A1_BC",
+        "signal_state": "GREEN",
+        "sectional_speed": 100,
+        "scheduled_time": 1000,
+        "current_time": 1000,
+        "gradient": None,
+        "condition": None,
+        "has_written_authority": False,
+    }
     base.update(overrides)
     return TrainRequest(**base)
 
 
 def _context(**overrides):
-    base = dict(
-        occupied_lines=[],
-        occupied_turnouts=[],
-        fouling_segments=[],
-        disaster_active=False,
-    )
+    base = {
+        "occupied_lines": [],
+        "occupied_turnouts": [],
+        "fouling_segments": [],
+        "disaster_active": False,
+    }
     base.update(overrides)
     return SystemContext(**base)
 

@@ -1,16 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.sensors_api import router as sensor_router
-from backend.api.yard_api import router as yard_router
-from backend.api.auth_api import router as auth_router
 from backend.api.advisory import router as advisory_router
 from backend.api.audit_api import router as audit_router
-from backend.api.crisis_api import router as crisis_router
-from backend.api.whatif_api import router as whatif_router
+from backend.api.auth_api import router as auth_router
 from backend.api.chat_api import router as chat_router
+from backend.api.crisis_api import router as crisis_router
 from backend.api.kpi import router as kpi_router
 from backend.api.rtis_api import router as rtis_router
+from backend.api.sensors_api import router as sensor_router
+from backend.api.whatif_api import router as whatif_router
+from backend.api.yard_api import router as yard_router
 from backend.services.decision_service import (
     SectionDecisionRequest,
     SectionDecisionResponse,

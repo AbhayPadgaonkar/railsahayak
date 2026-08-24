@@ -1,5 +1,4 @@
 from types import SimpleNamespace
-from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -13,8 +12,10 @@ from backend.services.decision_service import (
     SectionDecisionRequest,
     SectionDecisionResponse,
     SystemContext,
-    TrainRequest as DecisionTrainRequest,
     make_decision,
+)
+from backend.services.decision_service import (
+    TrainRequest as DecisionTrainRequest,
 )
 from backend.services.decision_state import record_action
 from backend.services.section_sim import section_sim
@@ -37,14 +38,14 @@ class Advisory(BaseModel):
     location: str
     duration: str
     description: str
-    affected_trains: List[str]
-    strategies: List[str]
-    section_id: Optional[str] = None
-    section_name: Optional[str] = None
+    affected_trains: list[str]
+    strategies: list[str]
+    section_id: str | None = None
+    section_name: str | None = None
 
 
 class AdvisoryResponse(BaseModel):
-    advisories: List[Advisory]
+    advisories: list[Advisory]
 
 
 STRATEGY_LABELS = {
@@ -66,7 +67,7 @@ _GRADIENTS = {
 }
 
 
-def _gradient_for(block_id: str) -> Optional[dict]:
+def _gradient_for(block_id: str) -> dict | None:
     """Map a live block id (e.g. ST_B1_BC) to its gradient metadata."""
     for suffix, meta in _GRADIENTS.items():
         if block_id.endswith(f"_{suffix}"):
@@ -74,7 +75,7 @@ def _gradient_for(block_id: str) -> Optional[dict]:
     return None
 
 
-def _live_roster() -> List[dict]:
+def _live_roster() -> list[dict]:
     """Live trains on the line as advisory roster entries (block/line/speed)."""
     return [
         {
@@ -88,7 +89,7 @@ def _live_roster() -> List[dict]:
     ]
 
 
-def _section_of(block_id: str) -> Optional[dict]:
+def _section_of(block_id: str) -> dict | None:
     """Controller territory owning the block (via station -> sections.json)."""
     station = section_sim._block_station.get(block_id)
     if not station:
@@ -104,8 +105,8 @@ def predict_delay(
     train_id: str = Query(default="T"),
     train_type: str = Query(default="PASSENGER"),
     sectional_speed: int = Query(default=100),
-    gradient_value: Optional[int] = Query(default=None),
-    condition: Optional[str] = Query(default=None),
+    gradient_value: int | None = Query(default=None),
+    condition: str | None = Query(default=None),
 ):
     profile = build_train_profile(
         train_id=train_id,
@@ -130,7 +131,7 @@ def get_advisories():
     return AdvisoryResponse(advisories=advisories)
 
 
-def _build_advisories() -> List[Advisory]:
+def _build_advisories() -> list[Advisory]:
     section_sim.tick()  # advance the line sim so the roster reflects live trains
     roster = _live_roster()
     if not roster:
@@ -163,11 +164,12 @@ def _build_advisories() -> List[Advisory]:
         primary = conflict.affected_trains[0]
         block = intended_blocks.get(primary, "")
 
+        gradient_meta = _gradient_for(block)
         delay = predict_delay(
             train_id=primary,
             train_type=_train_type_of(profiles, primary),
             sectional_speed=_speed_of(profiles, primary),
-            gradient_value=_gradient_for(block).get("value") if _gradient_for(block) else None,
+            gradient_value=(gradient_meta.get("value") if gradient_meta else None),
         ).predicted_delay_min
 
         title = STRATEGY_LABELS.get(
@@ -231,7 +233,7 @@ class AdvisoryActionResponse(BaseModel):
     advisory_id: str
     action: str
     applied: bool
-    decision: Optional[SectionDecisionResponse] = None
+    decision: SectionDecisionResponse | None = None
 
 
 _PASS_OR_HOLD_STRATEGIES = {
@@ -242,7 +244,7 @@ _PASS_OR_HOLD_STRATEGIES = {
 }
 
 
-def _roster_map() -> Dict[str, dict]:
+def _roster_map() -> dict[str, dict]:
     return {e["train_id"]: e for e in _live_roster()}
 
 
@@ -259,7 +261,7 @@ def _train_priority(train_id: str) -> int:
     return profile.priority
 
 
-def _next_block_id(block_id: str, line_id: str) -> Optional[str]:
+def _next_block_id(block_id: str, line_id: str) -> str | None:
     return section_sim._next_block_after(line_id, block_id)
 
 

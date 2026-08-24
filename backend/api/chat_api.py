@@ -1,4 +1,3 @@
-from typing import List, Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -10,20 +9,20 @@ router = APIRouter()
 
 class Chip(BaseModel):
     label: str
-    section: Optional[str] = None
+    section: str | None = None
 
 
 class AssistantResponse(BaseModel):
     answer: str
-    chips: List[Chip]
+    chips: list[Chip]
 
 
 class AssistantQuery(BaseModel):
-    message: Optional[str] = ""
+    message: str | None = ""
 
 
 class QuickPromptsResponse(BaseModel):
-    prompts: List[str]
+    prompts: list[str]
 
 
 @router.get("/assistant/prompts", response_model=QuickPromptsResponse)

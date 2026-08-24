@@ -1,4 +1,5 @@
 import time
+
 from sensor_state import SensorState
 
 sensor_state = SensorState()

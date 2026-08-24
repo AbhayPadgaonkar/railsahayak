@@ -1,5 +1,4 @@
 import time
-from typing import Dict, List, Optional
 
 from backend.services.decision_state import record_action
 
@@ -8,7 +7,7 @@ SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 # Crisis catalog: each type knows its label, whether it is a line-wide
 # disaster (forces the emergency rule across every /decision), and the
 # default controller action.
-CRISIS_TYPES: Dict[str, dict] = {
+CRISIS_TYPES: dict[str, dict] = {
     "NATURAL_DISASTER": {
         "label": "Natural Disaster",
         "is_disaster": True,
@@ -63,11 +62,11 @@ _CATALOG_ORDER = [
     "CROSSING_ACCIDENT",
 ]
 
-_CRISES: List[dict] = []
+_CRISES: list[dict] = []
 _COUNTER = 0
 
 
-def crisis_types() -> List[dict]:
+def crisis_types() -> list[dict]:
     return [
         {**CRISIS_TYPES[t], "type": t}
         for t in _CATALOG_ORDER
@@ -84,10 +83,10 @@ def disaster_active() -> bool:
 
 def declare_crisis(
     crisis_type: str,
-    severity: Optional[str],
+    severity: str | None,
     location: str,
-    block_id: Optional[str],
-    description: Optional[str],
+    block_id: str | None,
+    description: str | None,
 ) -> dict:
     """Declare a crisis, log it to the audit trail, and return the record.
 
@@ -130,7 +129,7 @@ def declare_crisis(
     return crisis
 
 
-def resolve_crisis(crisis_id: str) -> Optional[dict]:
+def resolve_crisis(crisis_id: str) -> dict | None:
     for crisis in _CRISES:
         if crisis["id"] == crisis_id:
             crisis["status"] = "RESOLVED"
@@ -147,10 +146,10 @@ def resolve_crisis(crisis_id: str) -> Optional[dict]:
     return None
 
 
-def list_crises() -> List[dict]:
+def list_crises() -> list[dict]:
     """All crises, newest first."""
     return list(reversed(_CRISES))
 
 
-def active_crises() -> List[dict]:
+def active_crises() -> list[dict]:
     return [c for c in _CRISES if c["status"] == "ACTIVE"]

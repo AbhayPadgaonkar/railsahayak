@@ -92,6 +92,8 @@ NEXT_PUBLIC_COMM_WS_URL=ws://localhost:8001
 
 ```bash
 python -m pytest
+python -m ruff check backend
+python -m mypy backend --ignore-missing-imports
 ```
 
 ### Frontend

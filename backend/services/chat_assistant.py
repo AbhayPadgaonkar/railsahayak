@@ -1,21 +1,20 @@
 import re
-from typing import Dict, List, Optional
 
-from backend.services.decision_state import active_decisions, record_action
-from backend.services.crisis_state import active_crises, disaster_active
-from backend.services.section_sim import section_sim
 from backend.api.advisory import _build_advisories
+from backend.services.crisis_state import active_crises, disaster_active
+from backend.services.decision_state import active_decisions, record_action
+from backend.services.section_sim import section_sim
 
 # Rule-based controller assistant over live G&SR state. Each handler inspects
 # the current sim / crisis / decision state and returns a plain-language answer
 # plus a list of structured fact chips for the UI.
 
 
-def _decision_map() -> Dict[str, dict]:
+def _decision_map() -> dict[str, dict]:
     return {d["train_id"]: d for d in active_decisions()}
 
 
-def _live_trains() -> List[dict]:
+def _live_trains() -> list[dict]:
     section_sim.tick()  # advance so the roster reflects live trains
     return [
         {
@@ -29,7 +28,7 @@ def _live_trains() -> List[dict]:
     ]
 
 
-def _section_of_block(block_id: str) -> Optional[str]:
+def _section_of_block(block_id: str) -> str | None:
     station = section_sim._block_station.get(block_id)
     if not station:
         return None
@@ -238,7 +237,7 @@ def _handle_unknown(query: str) -> dict:
     hints.append('"disaster" / "crisis" / "advisories" / "sections" / "status"')
     return {
         "answer": (
-            f"I didn't catch that. I'm a line-state advisor, not a general chatbot. "
+            "I didn't catch that. I'm a line-state advisor, not a general chatbot. "
             "Try " + "; ".join(hints) + "."
         ),
         "chips": [],
@@ -283,7 +282,7 @@ def _intent_label(_answer: str) -> str:
     return "answered"
 
 
-def quick_prompts() -> List[str]:
+def quick_prompts() -> list[str]:
     return [
         "Status",
         "Trains on line",

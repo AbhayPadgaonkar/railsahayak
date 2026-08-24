@@ -1,6 +1,5 @@
-from enum import Enum
-from typing import List
 from dataclasses import dataclass
+from enum import Enum
 
 
 class ConflictType(Enum):
@@ -21,6 +20,6 @@ class RiskLevel(Enum):
 class Conflict:
     conflict_type: ConflictType
     risk_level: RiskLevel
-    affected_trains: List[str]
+    affected_trains: list[str]
     description: str
-    suggested_strategies: List[str]
+    suggested_strategies: list[str]

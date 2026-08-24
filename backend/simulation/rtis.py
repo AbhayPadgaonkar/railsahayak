@@ -1,8 +1,8 @@
 class RTISFeed:
     def __init__(self, train_id: str):
         self.train_id = train_id
-        self.lat = None
-        self.lon = None
+        self.lat: float | None = None
+        self.lon: float | None = None
         self.speed = 0.0
 
     def update(self, lat: float, lon: float, speed: float):
