@@ -128,7 +128,9 @@
     {
       "id": "ST_A1_BC",
       "next_blocks": [
-        "ST_A1_CD"
+        "ST_A1_AB",
+        "ST_A1_CD",
+        "ST_B1_BC"
       ],
       "lines": [
         {
@@ -150,7 +152,10 @@
     },
     {
       "id": "ST_A1_CD",
-      "next_blocks": [],
+      "next_blocks": [
+        "ST_A1_BC",
+        "ST_A2_AB"
+      ],
       "lines": [
         {
           "line": "UP_MAIN",

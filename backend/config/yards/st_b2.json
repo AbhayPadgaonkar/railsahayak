@@ -31,7 +31,7 @@
   "turnouts": [
     {
       "id": "T1_ST_B2",
-      "from_line": "UP_MAIN",
+      "from_line": "DN_MAIN",
       "from_x": 450,
       "to_line": "DN_LOOP",
       "to_x": 500
@@ -40,7 +40,7 @@
       "id": "T2_ST_B2",
       "from_line": "DN_LOOP",
       "from_x": 700,
-      "to_line": "UP_MAIN",
+      "to_line": "DN_MAIN",
       "to_x": 800
     }
   ],
@@ -110,6 +110,7 @@
     {
       "id": "ST_B2_AB",
       "next_blocks": [
+        "ST_B1_CD",
         "ST_B2_BC"
       ],
       "lines": [
@@ -128,7 +129,9 @@
     {
       "id": "ST_B2_BC",
       "next_blocks": [
-        "ST_B2_CD"
+        "ST_B2_AB",
+        "ST_B2_CD",
+        "ST_C2_BC"
       ],
       "lines": [
         {
@@ -150,7 +153,10 @@
     },
     {
       "id": "ST_B2_CD",
-      "next_blocks": [],
+      "next_blocks": [
+        "ST_B2_BC",
+        "ST_C1_AB"
+      ],
       "lines": [
         {
           "line": "UP_MAIN",
