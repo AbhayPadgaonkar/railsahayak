@@ -19,7 +19,7 @@ const TRAIN_TYPES = [
   "DEPARTMENTAL",
 ];
 
-const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN"];
+const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN", "DN_LOOP"];
 
 const inputCls =
   "w-full rounded-lg bg-slate-950 border border-slate-700 px-2.5 py-1.5 text-sm outline-none focus:border-sky-500 transition-colors";

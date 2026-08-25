@@ -22,7 +22,7 @@ export const SIGNAL_STATES = [
 
 export const CONDITIONS = ["", "FOG", "STORM"];
 
-export const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN"];
+export const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN", "DN_LOOP"];
 
 // used to derive block order / next-block links
 export const ORDERING_LINE = "UP_MAIN";

@@ -71,7 +71,7 @@ describe("constants", () => {
       "DEFECTIVE",
     ]);
     expect(CONDITIONS).toEqual(["", "FOG", "STORM"]);
-    expect(LINES).toEqual(["UP_MAIN", "UP_LOOP", "DN_MAIN"]);
+    expect(LINES).toEqual(["UP_MAIN", "UP_LOOP", "DN_MAIN", "DN_LOOP"]);
     expect(ORDERING_LINE).toBe("UP_MAIN");
   });
 });

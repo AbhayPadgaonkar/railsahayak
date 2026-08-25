@@ -1,6 +1,6 @@
 {
   "station_id": "st_c2",
-  "station_name": "Section C - Station 2",
+  "station_name": "Class C - Station 2",
   "canvas": {
     "width": 1000,
     "height": 408
@@ -19,31 +19,9 @@
       "direction": "DN",
       "from_x": 0,
       "to_x": 1000
-    },
-    {
-      "id": "DN_LOOP",
-      "y": 330,
-      "direction": "COMMON",
-      "from_x": 250,
-      "to_x": 750
     }
   ],
-  "turnouts": [
-    {
-      "id": "T1_ST_C2",
-      "from_line": "DN_MAIN",
-      "from_x": 450,
-      "to_line": "DN_LOOP",
-      "to_x": 500
-    },
-    {
-      "id": "T2_ST_C2",
-      "from_line": "DN_LOOP",
-      "from_x": 700,
-      "to_line": "DN_MAIN",
-      "to_x": 800
-    }
-  ],
+  "turnouts": [],
   "signals": [
     {
       "id": "Outer_Warner_UP_ST_C2",
@@ -68,18 +46,6 @@
       "line": "UP_MAIN",
       "at_x": 900,
       "initial_state": "red"
-    },
-    {
-      "id": "Loop_Starter_ST_C2",
-      "line": "DN_LOOP",
-      "at_x": 500,
-      "initial_state": "red"
-    },
-    {
-      "id": "Loop_Exit_ST_C2",
-      "line": "DN_LOOP",
-      "at_x": 700,
-      "initial_state": "green"
     },
     {
       "id": "Outer_Warner_DN_ST_C2",
@@ -142,11 +108,6 @@
           "line": "DN_MAIN",
           "from_x": 450,
           "to_x": 800
-        },
-        {
-          "line": "DN_LOOP",
-          "from_x": 250,
-          "to_x": 750
         }
       ]
     },
@@ -211,13 +172,6 @@
       "from_x": 800,
       "to_x": 1000,
       "block": "ST_C2_CD"
-    },
-    {
-      "id": "TC_ST_C2_LOOP",
-      "line": "DN_LOOP",
-      "from_x": 250,
-      "to_x": 750,
-      "block": "ST_C2_BC"
     }
   ],
   "labels": [
@@ -230,11 +184,6 @@
       "text": "DN MAIN",
       "x": 10,
       "y": 270
-    },
-    {
-      "text": "LOOP",
-      "x": 250,
-      "y": 320
     }
   ]
 }
