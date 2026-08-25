@@ -1,0 +1,50 @@
+generator client {
+  provider             = "prisma-client-py"
+  interface            = "sync"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Decision {
+  train_id       String  @id
+  block_id       String
+  line_id        String
+  allow_movement Boolean
+  max_speed      Int?
+  signal_state   String
+  updated_at     Float
+}
+
+model AuditAction {
+  id     Int    @id @default(autoincrement())
+  action String
+  detail Json
+  at     String
+}
+
+model Crisis {
+  id          Int     @id @default(autoincrement())
+  crisis_id   String  @unique
+  type        String
+  label       String
+  is_disaster Boolean
+  severity    String
+  location    String
+  block_id    String?
+  description String
+  status      String
+  declared_at String
+  resolved_at String?
+}
+
+model Session {
+  token         String  @id
+  controller_id String
+  name          String
+  section       String
+  created_at    Float
+}

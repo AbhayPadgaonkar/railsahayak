@@ -22,6 +22,24 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: railsahayak
+        options: >-
+          --health-cmd "pg_isready -U postgres -d railsahayak"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/railsahayak
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/railsahayak_test
+      PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,6 +48,14 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r backend/requirements.txt -r backend/requirements-dev.txt
+      - run: python -m prisma generate --schema backend/prisma/schema.prisma
+      - run: |
+          pg_isready -h localhost -U postgres
+          psql -U postgres -h localhost -c "CREATE DATABASE railsahayak_test;"
+      - run: python -m prisma db push --schema backend/prisma/schema.prisma
+      - run: python -m prisma db push --schema backend/prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/railsahayak_test
       - run: python -m compileall backend
       - run: python -m ruff check backend
       - run: python -m mypy backend --ignore-missing-imports
@@ -37,6 +63,24 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: railsahayak
+        options: >-
+          --health-cmd "pg_isready -U postgres -d railsahayak"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/railsahayak
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/railsahayak_test
+      PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,6 +93,11 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r backend/requirements.txt
+      - run: python -m prisma generate --schema backend/prisma/schema.prisma
+      - run: |
+          pg_isready -h localhost -U postgres
+          psql -U postgres -h localhost -c "CREATE DATABASE railsahayak_test;"
+      - run: python -m prisma db push --schema backend/prisma/schema.prisma
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
