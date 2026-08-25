@@ -174,20 +174,16 @@ describe("validate edge cases", () => {
     );
   });
 
-  it("rejects missing last block", () => {
+  it("allows next_blocks referencing blocks outside the station", () => {
     const schema = baseSchema();
-    schema.blocks = [
-      {
-        id: "B",
-        next_blocks: ["MISSING"],
-        lines: [
-          { line: "UP_MAIN", from_x: 0, to_x: 500 },
-          { line: "DN_MAIN", from_x: 0, to_x: 500 },
-        ],
-      },
-    ];
-    schema.sections = [];
-    throws(schema, /references unknown block "MISSING"/);
+    schema.blocks[0].next_blocks = ["ST_OTHER_BC"];
+    expect(() => buildYardLayout(schema)).not.toThrow();
+  });
+
+  it("rejects a block referencing itself in next_blocks", () => {
+    const schema = baseSchema();
+    schema.blocks[0].next_blocks = ["BLK_1"];
+    throws(schema, /cannot reference itself/);
   });
 });
 
