@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getSession } from "@/lib/auth";
 import {
   DecisionRequest,
   DecisionResult,
@@ -41,15 +42,20 @@ const DecisionPanel = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load section model once (controllers + station ownership)
+  // Load section model once and default to the logged-in controller's section.
   useEffect(() => {
     let cancelled = false;
     getSections()
       .then((info) => {
         if (cancelled) return;
         setSections(info);
-        const first = info.sections[0]?.section_id;
-        if (first) setSectionId(first);
+        const session = getSession();
+        const cid = session?.controller_id?.toLowerCase();
+        const scoped = cid
+          ? info.sections.find((s) => s.controller_id.toLowerCase() === cid)
+          : undefined;
+        const selected = scoped?.section_id ?? info.sections[0]?.section_id;
+        if (selected) setSectionId(selected);
       })
       .catch(() => {
         if (!cancelled) setError("Failed to load sections");
@@ -98,6 +104,16 @@ const DecisionPanel = () => {
 
   const currentSection =
     sections?.sections.find((s) => s.section_id === sectionId) ?? null;
+
+  const session = typeof window !== "undefined" ? getSession() : null;
+  const allowedSection = session
+    ? sections?.sections.find(
+        (s) => s.controller_id.toLowerCase() === session.controller_id.toLowerCase()
+      )
+    : undefined;
+  const selectableSections = allowedSection
+    ? [allowedSection]
+    : (sections?.sections ?? []);
 
   const allBlocks = transitStations.flatMap((s) => s.blocks);
 
@@ -152,9 +168,9 @@ const DecisionPanel = () => {
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value)}
             className={inputCls + " w-auto"}
-            disabled={!sections}
+            disabled={!sections || Boolean(allowedSection)}
           >
-            {(sections?.sections ?? []).map((s) => (
+            {selectableSections.map((s) => (
               <option key={s.section_id} value={s.section_id}>
                 {s.name} ({s.controller_id})
               </option>

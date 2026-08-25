@@ -1,9 +1,15 @@
 from types import SimpleNamespace
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from backend.ai.conflict_detector import detect_conflicts
+from backend.api.permissions import (
+    ControllerSection,
+    assert_decision_allowed,
+    get_controller_section,
+)
 from backend.domain.trains import TrainType, build_train_profile
 from backend.ml.delay_predictor import DelayPredictor
 from backend.ml.feature_builder import build_delay_features
@@ -126,9 +132,12 @@ def predict_delay(
 
 
 @router.get("/advisory", response_model=AdvisoryResponse)
-def get_advisories():
+def get_advisories(
+    section: Annotated[ControllerSection, Depends(get_controller_section)],
+):
     advisories = _build_advisories()
-    return AdvisoryResponse(advisories=advisories)
+    scoped = [a for a in advisories if a.section_id == section.section_id]
+    return AdvisoryResponse(advisories=scoped)
 
 
 def _build_advisories() -> list[Advisory]:
@@ -317,11 +326,20 @@ def _build_apply_request(advisory: Advisory) -> SectionDecisionRequest:
 
 
 @router.post("/advisory/apply", response_model=AdvisoryActionResponse)
-def apply_advisory(payload: AdvisoryActionRequest):
+def apply_advisory(
+    payload: AdvisoryActionRequest,
+    section: Annotated[ControllerSection, Depends(get_controller_section)],
+):
     advisories = {a.id: a for a in _build_advisories()}
     advisory = advisories.get(payload.advisory_id)
     if not advisory:
         raise HTTPException(status_code=404, detail=f"Unknown advisory '{payload.advisory_id}'")
+
+    if advisory.section_id != section.section_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Advisory belongs to a different section",
+        )
 
     if payload.action == "dismiss":
         record_action("advisory_dismiss", {"advisory_id": advisory.id})
@@ -335,6 +353,7 @@ def apply_advisory(payload: AdvisoryActionRequest):
         raise HTTPException(status_code=422, detail="action must be 'accept' or 'dismiss'")
 
     request = _build_apply_request(advisory)
+    assert_decision_allowed(request, section)
     decision = make_decision(request)
     record_action(
         "advisory_accept",

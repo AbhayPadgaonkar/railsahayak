@@ -1,6 +1,23 @@
 import { SignalAspect, YardSchema } from "@/lib/yardlayout/schema";
+import { getSession } from "@/lib/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+function authHeaders(): Record<string, string> {
+  const session = getSession();
+  return session ? { Authorization: `Bearer ${session.token}` } : {};
+}
+
+async function apiFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const headers: Record<string, string> = {
+    ...authHeaders(),
+    ...(init?.headers as Record<string, string> | undefined),
+  };
+  return fetch(input, { ...init, headers });
+}
 
 export interface YardInfo {
   station_id: string;
@@ -22,7 +39,7 @@ export interface LineInfo {
 }
 
 export async function getYards(): Promise<YardInfo[]> {
-  const res = await fetch(`${API_URL}/yards`);
+  const res = await apiFetch(`${API_URL}/yards`);
   if (!res.ok) {
     throw new Error(`Failed to load yard list (${res.status})`);
   }
@@ -30,7 +47,7 @@ export async function getYards(): Promise<YardInfo[]> {
 }
 
 export async function getSections(): Promise<LineInfo> {
-  const res = await fetch(`${API_URL}/sections`);
+  const res = await apiFetch(`${API_URL}/sections`);
   if (!res.ok) {
     throw new Error(`Failed to load sections (${res.status})`);
   }
@@ -38,7 +55,7 @@ export async function getSections(): Promise<LineInfo> {
 }
 
 export async function getYardSchema(stationId: string): Promise<YardSchema> {
-  const res = await fetch(`${API_URL}/yard/${encodeURIComponent(stationId)}`);
+  const res = await apiFetch(`${API_URL}/yard/${encodeURIComponent(stationId)}`);
   if (!res.ok) {
     throw new Error(`Failed to load yard layout for "${stationId}" (${res.status})`);
   }
@@ -63,7 +80,7 @@ export interface DecisionTrain {
 
 export async function getSensorSnapshot(stationId?: string): Promise<SensorSnapshot> {
   const qs = stationId ? `?station=${encodeURIComponent(stationId)}` : "";
-  const res = await fetch(`${API_URL}/sensors${qs}`);
+  const res = await apiFetch(`${API_URL}/sensors${qs}`);
   if (!res.ok) {
     throw new Error(`Failed to load sensor snapshot (${res.status})`);
   }
@@ -124,7 +141,7 @@ export interface DecisionResult {
 export async function getDecision(
   payload: DecisionRequest
 ): Promise<DecisionResult> {
-  const res = await fetch(`${API_URL}/decision`, {
+  const res = await apiFetch(`${API_URL}/decision`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -154,7 +171,7 @@ export interface AdvisoryResponse {
 }
 
 export async function getAdvisories(): Promise<AdvisoryResponse> {
-  const res = await fetch(`${API_URL}/advisory`);
+  const res = await apiFetch(`${API_URL}/advisory`);
   if (!res.ok) {
     throw new Error(`Failed to load advisories (${res.status})`);
   }
@@ -172,7 +189,7 @@ export async function applyAdvisory(
   advisoryId: string,
   action: "accept" | "dismiss"
 ): Promise<AdvisoryActionResult> {
-  const res = await fetch(`${API_URL}/advisory/apply`, {
+  const res = await apiFetch(`${API_URL}/advisory/apply`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ advisory_id: advisoryId, action }),
@@ -199,7 +216,7 @@ export async function predictDelay(
       qs.set(k, String(v));
     }
   }
-  const res = await fetch(`${API_URL}/predict-delay?${qs.toString()}`);
+  const res = await apiFetch(`${API_URL}/predict-delay?${qs.toString()}`);
   if (!res.ok) {
     throw new Error(`Delay prediction failed (${res.status})`);
   }
@@ -230,7 +247,7 @@ export interface KpiHistoryResponse {
 }
 
 export async function getKpis(): Promise<KpiHistoryResponse> {
-  const res = await fetch(`${API_URL}/kpis`);
+  const res = await apiFetch(`${API_URL}/kpis`);
   if (!res.ok) {
     throw new Error(`Failed to load KPIs (${res.status})`);
   }
@@ -244,7 +261,7 @@ export interface AuditEntry {
 }
 
 export async function getAuditLogs(limit = 50): Promise<AuditEntry[]> {
-  const res = await fetch(`${API_URL}/auditlogs?limit=${limit}`);
+  const res = await apiFetch(`${API_URL}/auditlogs?limit=${limit}`);
   if (!res.ok) {
     throw new Error(`Failed to load audit logs (${res.status})`);
   }
@@ -289,7 +306,7 @@ export interface CrisisState {
 }
 
 export async function getCrises(): Promise<CrisisState> {
-  const res = await fetch(`${API_URL}/crisis`);
+  const res = await apiFetch(`${API_URL}/crisis`);
   if (!res.ok) {
     throw new Error(`Failed to load crisis state (${res.status})`);
   }
@@ -307,7 +324,7 @@ export interface DeclareCrisisParams {
 export async function declareCrisis(
   params: DeclareCrisisParams
 ): Promise<Crisis> {
-  const res = await fetch(`${API_URL}/crisis`, {
+  const res = await apiFetch(`${API_URL}/crisis`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -321,7 +338,7 @@ export async function declareCrisis(
 }
 
 export async function resolveCrisis(crisisId: string): Promise<Crisis> {
-  const res = await fetch(`${API_URL}/crisis/resolve`, {
+  const res = await apiFetch(`${API_URL}/crisis/resolve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ crisis_id: crisisId }),
@@ -398,7 +415,7 @@ export interface WhatIfResult {
 }
 
 export async function getWhatIfScenarios(): Promise<WhatIfScenariosResponse> {
-  const res = await fetch(`${API_URL}/whatif/scenarios`);
+  const res = await apiFetch(`${API_URL}/whatif/scenarios`);
   if (!res.ok) {
     throw new Error(`Failed to load what-if scenarios (${res.status})`);
   }
@@ -408,7 +425,7 @@ export async function getWhatIfScenarios(): Promise<WhatIfScenariosResponse> {
 export async function runWhatIfSimulation(
   params: WhatIfRunParams
 ): Promise<WhatIfResult> {
-  const res = await fetch(`${API_URL}/whatif/run`, {
+  const res = await apiFetch(`${API_URL}/whatif/run`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(params),
@@ -431,7 +448,7 @@ export interface AssistantResponse {
 }
 
 export async function askAssistant(message: string): Promise<AssistantResponse> {
-  const res = await fetch(`${API_URL}/assistant`, {
+  const res = await apiFetch(`${API_URL}/assistant`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message }),
@@ -444,7 +461,7 @@ export async function askAssistant(message: string): Promise<AssistantResponse> 
 }
 
 export async function getAssistantPrompts(): Promise<string[]> {
-  const res = await fetch(`${API_URL}/assistant/prompts`);
+  const res = await apiFetch(`${API_URL}/assistant/prompts`);
   if (!res.ok) {
     throw new Error(`Failed to load assistant prompts (${res.status})`);
   }

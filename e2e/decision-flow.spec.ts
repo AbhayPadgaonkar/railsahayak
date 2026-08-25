@@ -1,21 +1,33 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect, Page, request } from "@playwright/test";
 
 const SESSION_KEY = "railsahayak_session";
+const API_URL = "http://127.0.0.1:8000";
 
-const injectSession = async (page: Page) => {
+type Session = {
+  token: string;
+  controller_id: string;
+  name: string;
+  section: string;
+};
+
+const login = async (): Promise<Session> => {
+  const req = await request.newContext({ baseURL: API_URL });
+  const resp = await req.post("/login", {
+    data: { controller_id: "CCG-VR", password: "ccgvr123" },
+  });
+  if (!resp.ok()) {
+    throw new Error(`Login failed: ${await resp.text()}`);
+  }
+  return resp.json() as Promise<Session>;
+};
+
+const injectSession = async (page: Page, session: Session) => {
   await page.addInitScript(
-    ([key]) => {
-      localStorage.setItem(
-        key,
-        JSON.stringify({
-          token: "test-token",
-          controller_id: "ccg-vr",
-          name: "CCG-VR",
-          section: "Section A",
-        })
-      );
+    (args: (string | Session)[]) => {
+      const [key, data] = args as [string, Session];
+      localStorage.setItem(key, JSON.stringify(data));
     },
-    [SESSION_KEY]
+    [SESSION_KEY, session]
   );
 };
 
@@ -29,7 +41,8 @@ test("blocks unauthenticated users and redirects to login", async ({ page }) => 
 test("gates authenticated users into the train management page", async ({
   page,
 }) => {
-  await injectSession(page);
+  const session = await login();
+  await injectSession(page, session);
   await page.goto("/train-management");
   await expect(page.getByRole("heading", { name: "Train Management" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Run Decision" })).toBeEnabled();
@@ -38,7 +51,8 @@ test("gates authenticated users into the train management page", async ({
 test("runs a decision for the default trains and renders the outcome", async ({
   page,
 }) => {
-  await injectSession(page);
+  const session = await login();
+  await injectSession(page, session);
   await page.goto("/train-management");
 
   await expect(page.getByText("Train #1 — Section A")).toBeVisible();
@@ -55,7 +69,8 @@ test("runs a decision for the default trains and renders the outcome", async ({
 test("shows an error banner when the decision backend fails", async ({
   page,
 }) => {
-  await injectSession(page);
+  const session = await login();
+  await injectSession(page, session);
   await page.goto("/train-management");
   await expect(page.getByText("Train #1 — Section A")).toBeVisible();
 
@@ -79,7 +94,8 @@ test("shows an error banner when the decision backend fails", async ({
 test("dashboard renders the yard legend and switches stations via the picker", async ({
   page,
 }) => {
-  await injectSession(page);
+  const session = await login();
+  await injectSession(page, session);
   await page.goto("/dashboard?station=st_a1");
   await page.waitForLoadState("networkidle");
 

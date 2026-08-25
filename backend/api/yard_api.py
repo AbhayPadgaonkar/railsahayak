@@ -1,8 +1,15 @@
 import json
 import re
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from backend.api.permissions import (
+    ControllerSection,
+    assert_station_allowed,
+    get_controller_section,
+)
 
 router = APIRouter()
 
@@ -37,7 +44,11 @@ def list_yards():
 
 
 @router.get("/yard/{station_id}")
-def get_yard_layout(station_id: str):
+def get_yard_layout(
+    station_id: str,
+    section: Annotated[ControllerSection, Depends(get_controller_section)],
+):
+    assert_station_allowed(station_id, section)
     station = station_id.lower()
     if not STATION_ID_PATTERN.match(station):
         raise HTTPException(status_code=400, detail="Invalid station id")
