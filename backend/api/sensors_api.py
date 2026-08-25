@@ -1,8 +1,14 @@
 import json
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from backend.api.permissions import (
+    ControllerSection,
+    assert_station_allowed,
+    get_controller_section,
+)
 from backend.services.decision_state import active_decisions
 from backend.services.section_sim import section_sim
 
@@ -64,7 +70,11 @@ def _section_containing(sections: list, line_id: str, x: float):
 
 
 @router.get("/sensors")
-def get_sensor_snapshot(station: str = Query(default=DEFAULT_STATION)):
+def get_sensor_snapshot(
+    section: Annotated[ControllerSection, Depends(get_controller_section)],
+    station: str = Query(default=DEFAULT_STATION),
+):
+    assert_station_allowed(station, section)
     section_sim.tick()
     yard = _load_yard(station)
     sections = yard.get("sections", [])
