@@ -138,11 +138,13 @@ function validate(schema: YardSchema): void {
   }
 
   // next_blocks may reference blocks declared later in the schema, so validate
-  // every reference only after all block ids are registered.
+  // every reference only after all block ids are registered. Cross-station
+  // next_blocks (e.g. ST_A2_BC) are allowed because they model line topology
+  // beyond the current yard; only self-references are rejected.
   for (const b of schema.blocks) {
     for (const nb of b.next_blocks ?? []) {
-      if (!blockIds.has(nb) && nb !== b.id) {
-        throw new Error(`Block "${b.id}" next_blocks references unknown block "${nb}"`);
+      if (nb === b.id) {
+        throw new Error(`Block "${b.id}" next_blocks cannot reference itself`);
       }
     }
   }

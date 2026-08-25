@@ -1,6 +1,10 @@
 export type LineDirection = "UP" | "DN" | "COMMON";
 
-export type SignalAspect = "red" | "yellow" | "green";
+export type SignalAspect =
+  | "red"
+  | "single_yellow"
+  | "double_yellow"
+  | "green";
 
 export interface YardCanvas {
   width: number;

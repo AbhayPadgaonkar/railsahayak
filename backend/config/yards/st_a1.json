@@ -1,6 +1,6 @@
 {
   "station_id": "st_a1",
-  "station_name": "Section A - Station 1",
+  "station_name": "Class A - Station 1",
   "canvas": {
     "width": 1000,
     "height": 408
@@ -26,6 +26,13 @@
       "direction": "COMMON",
       "from_x": 250,
       "to_x": 750
+    },
+    {
+      "id": "DN_LOOP",
+      "y": 330,
+      "direction": "COMMON",
+      "from_x": 250,
+      "to_x": 750
     }
   ],
   "turnouts": [
@@ -41,6 +48,20 @@
       "from_line": "UP_LOOP",
       "from_x": 700,
       "to_line": "UP_MAIN",
+      "to_x": 800
+    },
+    {
+      "id": "T3_ST_A1",
+      "from_line": "DN_MAIN",
+      "from_x": 450,
+      "to_line": "DN_LOOP",
+      "to_x": 500
+    },
+    {
+      "id": "T4_ST_A1",
+      "from_line": "DN_LOOP",
+      "from_x": 700,
+      "to_line": "DN_MAIN",
       "to_x": 800
     }
   ],
@@ -70,13 +91,15 @@
       "initial_state": "red"
     },
     {
-      "id": "Loop_Starter_ST_A1",
+      "id": "Loop_Starter_UP_ST_A1",
+      "name": "Loop Starter UP",
       "line": "UP_LOOP",
       "at_x": 500,
       "initial_state": "red"
     },
     {
-      "id": "Loop_Exit_ST_A1",
+      "id": "Loop_Exit_UP_ST_A1",
+      "name": "Loop Exit UP",
       "line": "UP_LOOP",
       "at_x": 700,
       "initial_state": "green"
@@ -104,6 +127,20 @@
       "line": "DN_MAIN",
       "at_x": 100,
       "initial_state": "red"
+    },
+    {
+      "id": "Loop_Starter_DN_ST_A1",
+      "name": "Loop Starter DN",
+      "line": "DN_LOOP",
+      "at_x": 500,
+      "initial_state": "red"
+    },
+    {
+      "id": "Loop_Exit_DN_ST_A1",
+      "name": "Loop Exit DN",
+      "line": "DN_LOOP",
+      "at_x": 700,
+      "initial_state": "green"
     }
   ],
   "blocks": [
@@ -128,7 +165,9 @@
     {
       "id": "ST_A1_BC",
       "next_blocks": [
-        "ST_A1_CD"
+        "ST_A1_AB",
+        "ST_A1_CD",
+        "ST_A2_BC"
       ],
       "lines": [
         {
@@ -145,12 +184,20 @@
           "line": "UP_LOOP",
           "from_x": 250,
           "to_x": 750
+        },
+        {
+          "line": "DN_LOOP",
+          "from_x": 250,
+          "to_x": 750
         }
       ]
     },
     {
       "id": "ST_A1_CD",
-      "next_blocks": [],
+      "next_blocks": [
+        "ST_A1_BC",
+        "ST_A2_AB"
+      ],
       "lines": [
         {
           "line": "UP_MAIN",
@@ -209,8 +256,15 @@
       "block": "ST_A1_CD"
     },
     {
-      "id": "TC_ST_A1_LOOP",
+      "id": "TC_ST_A1_UP_LOOP",
       "line": "UP_LOOP",
+      "from_x": 250,
+      "to_x": 750,
+      "block": "ST_A1_BC"
+    },
+    {
+      "id": "TC_ST_A1_DN_LOOP",
+      "line": "DN_LOOP",
       "from_x": 250,
       "to_x": 750,
       "block": "ST_A1_BC"
@@ -228,9 +282,14 @@
       "y": 270
     },
     {
-      "text": "LOOP",
+      "text": "UP LOOP",
       "x": 250,
       "y": 60
+    },
+    {
+      "text": "DN LOOP",
+      "x": 250,
+      "y": 320
     }
   ]
 }

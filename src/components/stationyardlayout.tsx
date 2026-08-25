@@ -298,8 +298,12 @@ const StationYardLayout = ({
       <div className="flex-1 overflow-x-auto overflow-y-hidden">
         <svg viewBox={yard.viewBox} className="min-w-[720px] w-full h-full rounded-md">
           {signals.map((signal) => {
-          const poleHeight = 40; // total signal height
-          const bodyHeight = 28; // box size
+          const poleHeight = 52; // total signal height
+          const bodyHeight = 36; // box size
+          const state =
+            (signal.state as string) === "yellow"
+              ? "single_yellow"
+              : signal.state;
 
           return (
             <g
@@ -331,29 +335,36 @@ const StationYardLayout = ({
               {/* Red */}
               <circle
                 cx={0}
-                cy={poleHeight - bodyHeight - 10}
+                cy={poleHeight - bodyHeight - 6}
                 r={3.5}
-                fill={signal.state === "red" ? "red" : "#330000"}
+                fill={state === "red" ? "red" : "#330000"}
               />
-              {/* Yellow */}
+              {/* Single yellow */}
               <circle
                 cx={0}
-                cy={poleHeight - bodyHeight - 1}
+                cy={poleHeight - bodyHeight + 4}
                 r={3.5}
-                fill={signal.state === "yellow" ? "yellow" : "#332200"}
+                fill={state === "single_yellow" ? "#facc15" : "#332200"}
+              />
+              {/* Double yellow */}
+              <circle
+                cx={0}
+                cy={state === "double_yellow" ? poleHeight - bodyHeight + 14 : poleHeight - bodyHeight + 14}
+                r={3.5}
+                fill={state === "double_yellow" ? "#facc15" : "#332200"}
               />
               {/* Green */}
               <circle
                 cx={0}
-                cy={poleHeight - bodyHeight + 8}
+                cy={poleHeight - bodyHeight + 24}
                 r={3.5}
-                fill={signal.state === "green" ? "limegreen" : "#002200"}
+                fill={state === "green" ? "limegreen" : "#002200"}
               />
 
               {/* Label */}
               <text
                 x={0}
-                y={poleHeight - 50}
+                y={poleHeight - 58}
                 textAnchor="middle"
                 fontSize="9"
                 fill="#aaa"

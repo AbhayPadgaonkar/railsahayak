@@ -5,6 +5,7 @@ RailSahayak is a decision-support and communications dashboard for Indian Railwa
 ## Highlights
 
 - **Decision engine**: Signal authority, line occupancy, fouling detection, turnout conflicts, and speed restrictions.
+- **Indian Railways signaling**: 4-aspect signals (red, single yellow, double yellow, green) computed from block-occupancy lookahead.
 - **Optimization**: IR-compliant precedence and order optimization across trains sharing a block and line.
 - **Operations UI**: Live yard diagram, AI recommendations panel, and built-in comms gateway.
 - **Comms relay**: Separate WebSocket service for controller-to-controller messaging.
@@ -128,3 +129,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for the production runbook, environment varia
 
 - Train types supported: `VANDE_BHARAT`, `RAJDHANI`, `SHATABDI`, `MAIL_EXPRESS`, `PASSENGER`, `MEMU`, `GOODS`, `DEPARTMENTAL`.
 - The decision engine expects `block_id|line_id` keys in occupancy contexts.
+- Station yards follow Indian Railways station classes:
+  - **Class A**: two main lines plus UP and DN loops.
+  - **Class B**: two main lines plus a single loop (UP or DN).
+  - **Class C**: two main lines only, no loops.

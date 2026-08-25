@@ -1,6 +1,6 @@
 {
   "station_id": "st_b2",
-  "station_name": "Section B - Station 2",
+  "station_name": "Class B - Station 2",
   "canvas": {
     "width": 1000,
     "height": 408
@@ -31,7 +31,7 @@
   "turnouts": [
     {
       "id": "T1_ST_B2",
-      "from_line": "UP_MAIN",
+      "from_line": "DN_MAIN",
       "from_x": 450,
       "to_line": "DN_LOOP",
       "to_x": 500
@@ -40,7 +40,7 @@
       "id": "T2_ST_B2",
       "from_line": "DN_LOOP",
       "from_x": 700,
-      "to_line": "UP_MAIN",
+      "to_line": "DN_MAIN",
       "to_x": 800
     }
   ],
@@ -70,13 +70,15 @@
       "initial_state": "red"
     },
     {
-      "id": "Loop_Starter_ST_B2",
+      "id": "Loop_Starter_DN_ST_B2",
+      "name": "Loop Starter DN",
       "line": "DN_LOOP",
       "at_x": 500,
       "initial_state": "red"
     },
     {
-      "id": "Loop_Exit_ST_B2",
+      "id": "Loop_Exit_DN_ST_B2",
+      "name": "Loop Exit DN",
       "line": "DN_LOOP",
       "at_x": 700,
       "initial_state": "green"
@@ -110,6 +112,7 @@
     {
       "id": "ST_B2_AB",
       "next_blocks": [
+        "ST_B1_CD",
         "ST_B2_BC"
       ],
       "lines": [
@@ -128,7 +131,9 @@
     {
       "id": "ST_B2_BC",
       "next_blocks": [
-        "ST_B2_CD"
+        "ST_B2_AB",
+        "ST_B2_CD",
+        "ST_C1_BC"
       ],
       "lines": [
         {
@@ -150,7 +155,10 @@
     },
     {
       "id": "ST_B2_CD",
-      "next_blocks": [],
+      "next_blocks": [
+        "ST_B2_BC",
+        "ST_C1_AB"
+      ],
       "lines": [
         {
           "line": "UP_MAIN",
@@ -228,7 +236,7 @@
       "y": 270
     },
     {
-      "text": "LOOP",
+      "text": "DN LOOP",
       "x": 250,
       "y": 320
     }

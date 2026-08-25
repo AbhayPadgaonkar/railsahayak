@@ -63,9 +63,15 @@ describe("constants", () => {
   it("exposes train types, signal states, conditions, lines and ordering line", () => {
     expect(TRAIN_TYPES).toContain("VANDE_BHARAT");
     expect(TRAIN_TYPES).toContain("GOODS");
-    expect(SIGNAL_STATES).toEqual(["GREEN", "YELLOW", "RED", "DEFECTIVE"]);
+    expect(SIGNAL_STATES).toEqual([
+      "GREEN",
+      "DOUBLE_YELLOW",
+      "SINGLE_YELLOW",
+      "RED",
+      "DEFECTIVE",
+    ]);
     expect(CONDITIONS).toEqual(["", "FOG", "STORM"]);
-    expect(LINES).toEqual(["UP_MAIN", "UP_LOOP", "DN_MAIN"]);
+    expect(LINES).toEqual(["UP_MAIN", "UP_LOOP", "DN_MAIN", "DN_LOOP"]);
     expect(ORDERING_LINE).toBe("UP_MAIN");
   });
 });

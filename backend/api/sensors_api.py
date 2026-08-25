@@ -75,17 +75,40 @@ def get_sensor_snapshot(station: str = Query(default=DEFAULT_STATION)):
         for section in sections
     }
 
-    # Signal aspect: red when the signal's own section is occupied, or the next
-    # block along the line's traversal is occupied (cross-station: the block in
-    # the following station, or a train approaching on the same line).
-    def is_red(section_id: str) -> bool:
+    occupied_keys = section_sim.occupied_lines()
+
+    def _is_occupied(block_id: str, line_id: str) -> bool:
+        return f"{block_id}|{line_id}" in occupied_keys
+
+    # 4-aspect IR-style signal logic:
+    # - RED: own section occupied, or the very next block on the line is occupied.
+    # - SINGLE_YELLOW: next block clear, but the block after that is occupied
+    #   (the train must be prepared to stop at the next signal).
+    # - DOUBLE_YELLOW: next two blocks clear, but the third block ahead is occupied
+    #   (proceed, next signal will show single yellow).
+    # - GREEN: at least the next two blocks ahead are clear.
+    def _aspect(section_id: str) -> str:
         if zones.get(section_id):
-            return True
+            return "red"
         section = next((s for s in sections if s["id"] == section_id), None)
         if not section:
-            return False
-        nxt = section_sim._next_block_after(section["line"], section["block"])
-        return bool(nxt and f"{nxt}|{section['line']}" in occupied_keys)
+            return "green"
+        line = section["line"]
+        block = section["block"]
+        nxt = section_sim._next_block_after(line, block)
+        if not nxt:
+            return "green"
+        if _is_occupied(nxt, line):
+            return "red"
+        nxt2 = section_sim._next_block_after(line, nxt)
+        if not nxt2:
+            return "green"
+        if _is_occupied(nxt2, line):
+            return "single_yellow"
+        nxt3 = section_sim._next_block_after(line, nxt2)
+        if not nxt3 or _is_occupied(nxt3, line):
+            return "double_yellow"
+        return "green"
 
     signals = {}
     for signal in yard.get("signals", []):
@@ -93,7 +116,7 @@ def get_sensor_snapshot(station: str = Query(default=DEFAULT_STATION)):
         if section_id is None:
             signals[signal["id"]] = "green"
             continue
-        signals[signal["id"]] = "red" if is_red(section_id) else "green"
+        signals[signal["id"]] = _aspect(section_id)
 
     return {
         "station_id": yard["station_id"],
