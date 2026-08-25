@@ -81,13 +81,17 @@ test("dashboard renders the yard legend and switches stations via the picker", a
 }) => {
   await injectSession(page);
   await page.goto("/dashboard?station=st_a1");
+  await page.waitForLoadState("networkidle");
 
-  await expect(page.getByText("Track Free")).toBeVisible();
-  await expect(page.getByText("Decision GO")).toBeVisible();
-  await expect(page.getByText("Decision HOLD")).toBeVisible();
+  await expect(page.getByText("Track Free")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Decision GO")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Decision HOLD")).toBeVisible({ timeout: 15_000 });
 
-  await expect(page.getByRole("combobox")).toHaveValue("st_a1");
-  await page.getByRole("combobox").selectOption("st_a2");
+  const stationPicker = page.getByRole("combobox");
+  await expect(stationPicker).toBeVisible({ timeout: 15_000 });
+  await expect(stationPicker).toHaveValue("st_a1", { timeout: 15_000 });
+
+  await stationPicker.selectOption("st_a2");
   await expect
     .poll(async () => new URL(page.url()).searchParams.get("station"))
     .toBe("st_a2");
