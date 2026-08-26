@@ -4,10 +4,15 @@ import userEvent from "@testing-library/user-event";
 import DecisionPanel from "./decisionpanel";
 import type { DecisionResult } from "@/lib/api";
 import { lineInfo, makeSchema } from "@/test/helpers";
+import { getSession } from "@/lib/auth";
 
 const getDecision = vi.fn();
 const getSections = vi.fn();
 const getYardSchema = vi.fn();
+
+vi.mock("@/lib/auth", () => ({
+  getSession: vi.fn(() => null),
+}));
 
 vi.mock("@/lib/api", () => ({
   getDecision: (...args: unknown[]) => getDecision(...args),
@@ -181,5 +186,20 @@ describe("DecisionPanel", () => {
       expect(screen.getByText("Decision Output")).toBeInTheDocument();
     });
     expect(screen.queryByText("Decision request failed (500)")).not.toBeInTheDocument();
+  });
+
+  it("defaults to and locks the controller's assigned section", async () => {
+    const session = {
+      token: "token-vrvlsd",
+      controller_id: "VR-VLSD",
+      name: "R. Patil",
+      section: "VR-VLSD",
+    };
+    (getSession as unknown as ReturnType<typeof vi.fn>).mockReturnValue(session);
+    render(<DecisionPanel />);
+    await waitFor(() => {
+      expect(screen.getByLabelText("Section")).toHaveValue("SEC_B");
+    });
+    expect(screen.getByLabelText("Section")).toBeDisabled();
   });
 });
