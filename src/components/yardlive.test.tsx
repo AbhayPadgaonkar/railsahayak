@@ -60,6 +60,9 @@ describe("YardLive", () => {
   it("renders stations grouped by section plus an Other group", async () => {
     render(<YardLive />);
     await waitFor(() => {
+      expect(getYardSchema).toHaveBeenCalledWith("st_a1");
+    });
+    await waitFor(() => {
       expect(screen.getByText("Section A - Station 1 (st_a1)")).toBeInTheDocument();
     });
     expect(screen.getByText("Legacy Yard (st_b9)")).toBeInTheDocument();
@@ -71,19 +74,37 @@ describe("YardLive", () => {
   });
 
   it("polls the sensor snapshot on mount and on the interval", async () => {
-    vi.useFakeTimers();
-    render(<YardLive />);
-    await vi.waitFor(() => {
+    const originalError = console.error;
+    console.error = (...args: unknown[]) => {
+      if (typeof args[0] === "string" && /not wrapped in act/.test(args[0])) {
+        return;
+      }
+      originalError(...args);
+    };
+
+    try {
+      vi.useFakeTimers();
+      render(<YardLive />);
+      await vi.waitFor(() => {
+        expect(getYardSchema).toHaveBeenCalledWith("st_a1");
+      });
+      await vi.waitFor(() => {
+        expect(getSensorSnapshot).toHaveBeenCalledWith("st_a1");
+      });
+      getSensorSnapshot.mockClear();
+      await vi.advanceTimersByTimeAsync(5000);
       expect(getSensorSnapshot).toHaveBeenCalledWith("st_a1");
-    });
-    getSensorSnapshot.mockClear();
-    await vi.advanceTimersByTimeAsync(5000);
-    expect(getSensorSnapshot).toHaveBeenCalledWith("st_a1");
+    } finally {
+      console.error = originalError;
+    }
   }, 10000);
 
   it("resets sensor state and re-polls when the station changes", async () => {
     const u = userEvent.setup();
     render(<YardLive />);
+    await waitFor(() => {
+      expect(getYardSchema).toHaveBeenCalledWith("st_a1");
+    });
     await waitFor(() => {
       expect(getSensorSnapshot).toHaveBeenCalledWith("st_a1");
     });
@@ -98,6 +119,9 @@ describe("YardLive", () => {
   it("keeps default station and retries when the snapshot fetch fails", async () => {
     getSensorSnapshot.mockRejectedValue(new Error("unreachable"));
     render(<YardLive />);
+    await waitFor(() => {
+      expect(getYardSchema).toHaveBeenCalledWith("st_a1");
+    });
     await waitFor(() => {
       expect(getSensorSnapshot).toHaveBeenCalledWith("st_a1");
     });

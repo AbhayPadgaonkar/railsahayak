@@ -12,6 +12,12 @@ export const lineInfo: LineInfo = {
       controller_id: "ccg-vr",
       stations: ["st_a1"],
     },
+    {
+      section_id: "SEC_B",
+      name: "Section B",
+      controller_id: "vr-vlsd",
+      stations: ["st_b1"],
+    },
   ],
 };
 

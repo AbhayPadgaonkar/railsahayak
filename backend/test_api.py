@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from backend.api.advisory import Advisory
 from backend.api.main import app
 
 client = TestClient(app)
@@ -216,3 +217,114 @@ def test_assistant_endpoint():
     resp = client.post("/assistant", json={"message": "sections"})
     assert resp.status_code == 200
     assert "Section" in resp.json()["answer"]
+
+
+def test_login_rejects_bad_credentials():
+    resp = client.post(
+        "/login",
+        json={"controller_id": "CCG-VR", "password": "wrong"},
+    )
+    assert resp.status_code == 401
+
+
+def test_me_rejects_invalid_token():
+    resp = client.get("/me", headers={"Authorization": "Bearer not-a-token"})
+    assert resp.status_code == 401
+
+
+def test_logout_revokes_token():
+    token = _login()
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/me", headers=headers).status_code == 200
+
+    logout = client.post("/logout", headers=headers)
+    assert logout.status_code == 200
+    assert client.get("/me", headers=headers).status_code == 401
+
+
+def test_predict_delay_endpoint():
+    resp = client.get(
+        "/predict-delay",
+        params={"train_id": "T", "train_type": "PASSENGER", "sectional_speed": 100},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["train_id"] == "T"
+    assert "predicted_delay_min" in body
+
+
+def test_whatif_scenarios_endpoint():
+    resp = client.get("/whatif/scenarios")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert isinstance(body["scenarios"], list)
+    assert isinstance(body["trains"], list)
+
+
+def test_kpis_endpoint():
+    resp = client.get("/kpis")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert isinstance(body["history"], list)
+
+
+def test_rtis_endpoint():
+    resp = client.get("/rtis")
+    assert resp.status_code == 200
+    assert "events" in resp.json()
+
+
+def test_advisory_with_auth_returns_list(auth_headers):
+    resp = client.get("/advisory", headers=auth_headers)
+    assert resp.status_code == 200
+    assert "advisories" in resp.json()
+
+
+def test_advisory_apply_requires_auth():
+    resp = client.post("/advisory/apply", json={"advisory_id": "x", "action": "dismiss"})
+    assert resp.status_code == 401
+
+
+def test_advisory_apply_unknown_is_404(auth_headers):
+    resp = client.post(
+        "/advisory/apply",
+        json={"advisory_id": "does-not-exist", "action": "dismiss"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 404
+
+
+def test_advisory_apply_invalid_action_is_422(auth_headers):
+    resp = client.post(
+        "/advisory/apply",
+        json={"advisory_id": "advisory-1", "action": "maybe"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 422
+
+
+def test_advisory_apply_cross_section_is_403(auth_headers, monkeypatch):
+    foreign = Advisory(
+        id="advisory-foreign",
+        title="Foreign",
+        priority="HIGH",
+        location="ST_B1_AB",
+        duration="Ongoing",
+        description="test",
+        affected_trains=["UP-T"],
+        strategies=["HOLD_LOWER_PRIORITY"],
+        section_id="B",
+        section_name="Section B (VR-VLSD)",
+    )
+
+    def _fake_build():
+        return [foreign]
+
+    monkeypatch.setattr("backend.api.advisory._build_advisories", _fake_build)
+
+    resp = client.post(
+        "/advisory/apply",
+        json={"advisory_id": "advisory-foreign", "action": "accept"},
+        headers=auth_headers,
+    )
+    assert resp.status_code == 403
