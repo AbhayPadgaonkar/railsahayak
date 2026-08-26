@@ -271,7 +271,10 @@ def test_kpis_endpoint():
 def test_rtis_endpoint():
     resp = client.get("/rtis")
     assert resp.status_code == 200
-    assert "events" in resp.json()
+    body = resp.json()
+    assert "feeds" in body
+    assert "elapsed_seconds" in body
+    assert "finished" in body
 
 
 def test_advisory_with_auth_returns_list(auth_headers):
