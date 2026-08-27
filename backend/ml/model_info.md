@@ -29,7 +29,13 @@ Features are built by `backend/ml/feature_builder.py`:
 | `priority` | integer | Train priority rank (1 = highest, 8 = lowest) |
 | `is_goods` | 0/1 | 1 if train type is `GOODS` |
 | `gradient_severity` | 0/1 | 1 if a gradient exists and `gradient.value ≤ 200` |
+| `gradient_value` | integer | Raw gradient value (0 if no gradient) |
 | `fog` | 0/1 | 1 if condition is `"FOG"` |
+| `rain` | 0/1 | 1 if condition is `"RAIN"` |
+| `storm` | 0/1 | 1 if condition is `"STORM"` |
+| `thunderstorm` | 0/1 | 1 if condition is `"THUNDERSTORM"` |
+| `goods_gradient` | 0/1 | Interaction: `is_goods × gradient_severity` |
+| `fog_speed` | integer | Interaction: `fog × sectional_speed` |
 
 ## Training dataset
 
@@ -39,11 +45,12 @@ Features are built by `backend/ml/feature_builder.py`:
 - **Coverage:**
   - All 8 `TrainType` values
   - Speeds 30, 80, 130 km/h (edge cases) plus random 30–130 km/h
-  - Clear and foggy conditions, plus random `RAIN`/`STORM` strings
+  - Weather conditions: clear, `"FOG"`, `"RAIN"`, `"STORM"`, `"THUNDERSTORM"`
   - Gradient values: `None`, 50, 150, 200, 201, 400 (straddles the 200 severity threshold)
   - Random gradients biased toward values just below and just above 200
+- **Validation:** 5-fold cross-validation is computed when the model is retrained.
 
-The generative delay formula is intentionally not perfectly linear (it includes a small quadratic speed penalty and Gaussian noise) so the fitted model learns a robust approximation rather than recovering the formula exactly.
+The generative delay formula is intentionally not perfectly linear (it includes a small quadratic speed penalty, weather effects, and interaction terms with noise) so the fitted model learns a robust approximation rather than recovering the formula exactly.
 
 ## Trained coefficients
 
@@ -51,35 +58,44 @@ Loaded from `delay_model.json`:
 
 | Coefficient | Value | Interpretation |
 |---|---|---|
-| `bias` | `17.382813` | Baseline delay when all feature values are zero |
-| `sectional_speed` | `-0.099751` | Higher speed reduces predicted delay |
-| `priority` | `1.293632` | Lower-priority trains (higher number) get more delay |
-| `is_goods` | `4.019753` | Goods trains add ~4 minutes of delay |
-| `gradient_severity` | `3.512314` | A severe gradient adds ~3.5 minutes |
-| `fog` | `7.007707` | Fog adds ~7 minutes — the strongest single factor |
+| `bias` | `17.3892` | Baseline delay when all feature values are zero |
+| `sectional_speed` | `-0.0996` | Higher speed reduces predicted delay |
+| `priority` | `1.2926` | Lower-priority trains (higher number) get more delay |
+| `is_goods` | `3.9925` | Goods trains add ~4 minutes of delay |
+| `gradient_severity` | `3.4985` | A severe gradient adds ~3.5 minutes |
+| `gradient_value` | `0.0050` | Each additional unit of raw gradient value adds a small delay |
+| `fog` | `5.0449` | Fog adds ~5 minutes |
+| `rain` | `3.9912` | Rain adds ~4 minutes |
+| `storm` | `5.9786` | Storm adds ~6 minutes |
+| `thunderstorm` | `7.9671` | Thunderstorm adds ~8 minutes — the strongest single factor |
+| `goods_gradient` | `2.6083` | Goods trains on severe gradients get an extra penalty |
+| `fog_speed` | `0.1194` | Fog penalty grows with speed: fast trains lose more time in fog |
 
-All signs are consistent with railway operations intuition.
+All signs are consistent with railway operations intuition. Interaction terms capture combined effects that a purely additive model would miss.
 
 ## Validation metrics
 
-Evaluated on a **fresh 5,000-sample validation set** generated with a different random seed (`1234`) but the same generative process:
+The model is evaluated with **5-fold cross-validation** on the training set generated with seed `42`:
 
 | Metric | Value |
 |---|---|
-| R² | **0.9561** |
-| RMSE | **1.22 minutes** |
-| MAE | **0.98 minutes** |
+| Mean R² | **0.9697** |
+| Mean RMSE | **1.22 minutes** |
+| Mean MAE | **0.97 minutes** |
 
 For reference, the previous hand-tuned dummy coefficients scored **R² = −9.36** on the same validation set, meaning they were worse than predicting the mean delay.
 
 ## Example predictions
 
-| Train type | Speed | Gradient | Fog | Predicted delay |
+| Train type | Speed | Gradient | Condition | Predicted delay |
 |---|---|---|---|---|
-| MAIL_EXPRESS | 100 | none | no | ~12.6 min |
-| MAIL_EXPRESS | 100 | none | yes | ~23.1 min |
-| GOODS | 100 | none | no | ~16.6 min |
-| GOODS | 100 | 150 (severe) | yes | ~27.2 min |
+| MAIL_EXPRESS | 100 | none | clear | ~12.6 min |
+| MAIL_EXPRESS | 100 | none | FOG | ~29.6 min |
+| MAIL_EXPRESS | 40 | none | FOG | ~28.4 min |
+| MAIL_EXPRESS | 120 | none | FOG | ~30.0 min |
+| GOODS | 100 | none | clear | ~20.5 min |
+| GOODS | 100 | 150 (severe) | FOG | ~44.3 min |
+| GOODS | 100 | 201 (not severe) | clear | ~21.5 min |
 
 ## Edge-case guarantees
 
@@ -88,9 +104,16 @@ The training set explicitly includes inputs at the feature envelope boundaries:
 - Minimum speed (`30`) and maximum speed (`130`)
 - Every train type in `TrainType`
 - Gradient values exactly at the severity threshold: `200` (flagged severe) and `201` (not severe)
-- Fog vs clear conditions
+- All supported weather conditions: clear, `"FOG"`, `"RAIN"`, `"STORM"`, `"THUNDERSTORM"`
+- Interaction cases: goods trains on severe gradients, fog at different speeds
 
-The test `test_gradient_severity_threshold_at_200` in `test_delay_predictor.py` verifies that the model predicts higher delay for a gradient value of `200` than for `201`.
+The following tests in `test_delay_predictor.py` verify these guarantees:
+
+- `test_gradient_severity_threshold_at_200` — gradient `200` vs `201`
+- `test_gradient_value_continuous_effect` — larger severe gradients add more delay
+- `test_goods_gradient_interaction` — goods + gradient penalty
+- `test_fog_speed_interaction` — fog penalty grows with speed
+- `test_rain_and_storm_increase_predicted_delay` — weather ordering
 
 ## Regenerating the model
 
@@ -105,13 +128,13 @@ This overwrites `backend/ml/delay_model.json` with the newly fitted coefficients
 ## Limitations
 
 1. **Synthetic data.** The training set is generated from a hand-coded formula, not real operational logs. The metrics reflect in-distribution performance on that synthetic process.
-2. **Linear model.** The model assumes delay is a linear combination of the five features. If real delays have strong interaction effects (e.g., fog + steep gradient combined is worse than the sum), a non-linear model would be more accurate.
-3. **Limited conditions.** Only `"FOG"` is currently encoded as a binary feature. Other strings (`RAIN`, `STORM`) are treated as clear conditions unless the feature builder is extended.
-4. **Gradient severity threshold is fixed.** The switch at value `200` is hardcoded in `feature_builder.py`.
+2. **Linear model.** The model is a linear regression. Interaction terms capture some non-linear effects, but strong non-linearities (e.g., a hard speed cap) would require additional features or a non-linear model.
+3. **Fixed gradient severity threshold.** The switch at value `200` is hardcoded in `feature_builder.py`. The continuous `gradient_value` feature gives the model some flexibility, but the threshold itself is not learned from data.
 
 ## Future improvements
 
 - Collect real delay logs from the field and retrain on historical data.
-- Add interaction features (e.g., `is_goods × gradient_severity`, `fog × speed`).
-- Add more condition encodings (`RAIN`, `STORM`, `THUNDERSTORM`).
-- Evaluate with k-fold cross-validation once real data is available.
+- Make the gradient severity threshold configurable or learn it from data.
+- Add more granular features such as train length, schedule adherence, and station dwell times.
+- Experiment with non-linear models (e.g., gradient-boosted trees) once real data is available.
+- Track prediction drift over time and retrain when field data diverges from the synthetic baseline.

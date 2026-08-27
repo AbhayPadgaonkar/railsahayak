@@ -22,12 +22,18 @@ class DelayPredictor:
             # Fallback coefficients used when the trained model is not present.
             self.weights = {
                 "sectional_speed": -0.05,
-                "priority": -1.0,
-                "is_goods": 3.0,
-                "gradient_severity": 2.5,
-                "fog": 4.0,
+                "priority": 1.0,
+                "is_goods": 4.0,
+                "gradient_severity": 3.5,
+                "gradient_value": 0.005,
+                "fog": 5.0,
+                "rain": 4.0,
+                "storm": 6.0,
+                "thunderstorm": 8.0,
+                "goods_gradient": 2.5,
+                "fog_speed": 0.02,
             }
-            self.bias = 2.0
+            self.bias = 17.0
 
     def predict(self, features: dict) -> float:
         delay = self.bias
