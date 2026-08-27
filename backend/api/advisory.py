@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from backend.ai.conflict_detector import detect_conflicts
@@ -108,11 +108,11 @@ def _section_of(block_id: str) -> dict | None:
 
 @router.get("/predict-delay", response_model=DelayPrediction)
 def predict_delay(
-    train_id: str = Query(default="T"),
-    train_type: str = Query(default="PASSENGER"),
-    sectional_speed: int = Query(default=100),
-    gradient_value: int | None = Query(default=None),
-    condition: str | None = Query(default=None),
+    train_id: str = "T",
+    train_type: str = "PASSENGER",
+    sectional_speed: int = 100,
+    gradient_value: int | None = None,
+    condition: str | None = None,
 ):
     profile = build_train_profile(
         train_id=train_id,
