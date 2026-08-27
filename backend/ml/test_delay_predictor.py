@@ -66,3 +66,11 @@ def test_gradient_severity_increases_delay():
     flat = _features(TrainType.MAIL_EXPRESS, 100)
     gradient = _features(TrainType.MAIL_EXPRESS, 100, gradient_value=150)
     assert predictor.predict(gradient) > predictor.predict(flat)
+
+
+def test_gradient_severity_threshold_at_200():
+    """A gradient value of 200 is flagged as severe; 201 is not."""
+    predictor = DelayPredictor()
+    severity = _features(TrainType.MAIL_EXPRESS, 100, gradient_value=200)
+    non_severe = _features(TrainType.MAIL_EXPRESS, 100, gradient_value=201)
+    assert predictor.predict(severity) > predictor.predict(non_severe)
