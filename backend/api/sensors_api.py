@@ -34,32 +34,44 @@ def _station_blocks(station_id: str) -> set:
     return {b["id"] for b in _load_yard(station_id).get("blocks", [])}
 
 
-def _live_decision_trains(station_id: str):
-    """Merge active decisions with the live sim so markers track real movement.
+def _live_trains_for_station(station_id: str):
+    """Return all trains currently inside this station's blocks.
 
-    Only trains currently inside this station's blocks are reported, so each
-    station's map shows its own traffic. A decided train that is running in the
-    sim reports its current block/line (position updates as it moves); its
-    decision fields (allow_movement, max_speed, signal_state) come from the
-    decision store. Decisions without a matching sim train are passed through
-    so a freshly-posted decision shows up immediately (the sim seeds it on the
-    next tick)."""
+    Merges decision-tracked trains (which carry G&SR fields like
+    allow_movement, max_speed, signal_state) with timetable-driven sim
+    trains that haven't been through the decision engine yet. Each train
+    appears exactly once — decision state wins when available."""
     station_blocks = _station_blocks(station_id)
     sim_by_id = {t.train_id: t for t in section_sim.trains}
+    seen: set[str] = set()
+
     for decision in active_decisions():
         sim = sim_by_id.get(decision["train_id"])
         block_id = sim.block_id if sim else decision["block_id"]
         line_id = sim.line_id if sim else decision["line_id"]
         if block_id not in station_blocks:
             continue
-        if sim:
-            yield {
-                **decision,
-                "block_id": block_id,
-                "line_id": line_id,
-            }
-        else:
-            yield decision
+        seen.add(decision["train_id"])
+        yield {
+            **decision,
+            "block_id": block_id,
+            "line_id": line_id,
+        }
+
+    for t in section_sim.trains:
+        if t.train_id in seen:
+            continue
+        if t.block_id not in station_blocks:
+            continue
+        yield {
+            "train_id": t.train_id,
+            "train_type": t.train_type,
+            "block_id": t.block_id,
+            "line_id": t.line_id,
+            "allow_movement": True,
+            "max_speed": t.speed_kmph,
+            "signal_state": "GREEN",
+        }
 
 
 def _section_containing(sections: list, line_id: str, x: float):
@@ -132,5 +144,5 @@ def get_sensor_snapshot(
         "station_id": yard["station_id"],
         "zones": zones,
         "signals": signals,
-        "trains": list(_live_decision_trains(station)),
+        "trains": list(_live_trains_for_station(station)),
     }
