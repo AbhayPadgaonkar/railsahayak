@@ -62,16 +62,22 @@ def _disconnect() -> None:
 def reset_database() -> None:
     """Truncate all Prisma-managed tables. Useful for test isolation."""
     db = get_client()
-    for table_delete in [
-        db.auditaction.delete_many,
-        db.crisis.delete_many,
-        db.decision.delete_many,
-        db.session.delete_many,
-    ]:
-        try:
-            table_delete()
-        except prisma.errors.TableNotFoundError:
-            pass  # table may not exist in a fresh test database
+    try:
+        db.auditaction.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
+    try:
+        db.crisis.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
+    try:
+        db.decision.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
+    try:
+        db.session.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
 
 
 def migrate() -> None:
