@@ -297,10 +297,24 @@ def test_advisory_apply_unknown_is_404(auth_headers):
     assert resp.status_code == 404
 
 
-def test_advisory_apply_invalid_action_is_422(auth_headers):
+def test_advisory_apply_invalid_action_is_422(auth_headers, monkeypatch):
+    own = Advisory(
+        id="advisory-test",
+        title="Test",
+        priority="HIGH",
+        location="ST_A1_AB",
+        duration="Ongoing",
+        description="test",
+        affected_trains=["T1"],
+        strategies=["HOLD_LOWER_PRIORITY"],
+        section_id="A",
+        section_name="Section A",
+    )
+    monkeypatch.setattr("backend.api.advisory._build_advisories", lambda: [own])
+
     resp = client.post(
         "/advisory/apply",
-        json={"advisory_id": "advisory-1", "action": "maybe"},
+        json={"advisory_id": "advisory-test", "action": "maybe"},
         headers=auth_headers,
     )
     assert resp.status_code == 422
