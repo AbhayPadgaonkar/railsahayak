@@ -1,0 +1,989 @@
+{
+  "section_id": "PROTO_LINE",
+  "mode": "realtime",
+  "schedule": [
+    {
+      "train_id": "13501",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "00:01",
+      "speed_kmph": 60,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "12625",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "00:17",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13502",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "00:47",
+      "speed_kmph": 60,
+      "delay_min": 5,
+      "stops": []
+    },
+    {
+      "train_id": "12626",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "01:41",
+      "speed_kmph": 100,
+      "delay_min": 5,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        },
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "13503",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "01:44",
+      "speed_kmph": 60,
+      "delay_min": 15,
+      "stops": []
+    },
+    {
+      "train_id": "13504",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "01:45",
+      "speed_kmph": 60,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "12611",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "02:02",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 3
+        },
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "12612",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "02:16",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "13505",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "02:38",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13506",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "02:51",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13507",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "03:10",
+      "speed_kmph": 60,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "12723",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "03:23",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "12724",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "03:53",
+      "speed_kmph": 100,
+      "delay_min": 2,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 2
+        },
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "13508",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "04:02",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13509",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "04:51",
+      "speed_kmph": 60,
+      "delay_min": 5,
+      "stops": []
+    },
+    {
+      "train_id": "14003",
+      "train_type": "MEMU",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "05:09",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "12735",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "05:16",
+      "speed_kmph": 100,
+      "delay_min": 15,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "13510",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "05:29",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "12736",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "05:41",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "22435",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "06:35",
+      "speed_kmph": 130,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "14004",
+      "train_type": "MEMU",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "06:55",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "14005",
+      "train_type": "MEMU",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "07:00",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "12009",
+      "train_type": "SHATABDI",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "07:10",
+      "speed_kmph": 130,
+      "delay_min": 8,
+      "stops": []
+    },
+    {
+      "train_id": "15003",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "07:29",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "22436",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "08:15",
+      "speed_kmph": 130,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "20901",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "08:19",
+      "speed_kmph": 130,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13501",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "08:51",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "15004",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "08:53",
+      "speed_kmph": 90,
+      "delay_min": 5,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "13502",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "09:13",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "11013",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "09:27",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "12301",
+      "train_type": "RAJDHANI",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "09:34",
+      "speed_kmph": 110,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "15005",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "09:59",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "20902",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "10:03",
+      "speed_kmph": 130,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "14006",
+      "train_type": "MEMU",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "10:04",
+      "speed_kmph": 80,
+      "delay_min": 2,
+      "stops": [
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 2
+        },
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "12302",
+      "train_type": "RAJDHANI",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "10:14",
+      "speed_kmph": 110,
+      "delay_min": 5,
+      "stops": []
+    },
+    {
+      "train_id": "11014",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "10:57",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "12951",
+      "train_type": "RAJDHANI",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "11:21",
+      "speed_kmph": 110,
+      "delay_min": 5,
+      "stops": []
+    },
+    {
+      "train_id": "11019",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "11:51",
+      "speed_kmph": 100,
+      "delay_min": 5,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        },
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "12952",
+      "train_type": "RAJDHANI",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "11:55",
+      "speed_kmph": 110,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "64001",
+      "train_type": "MEMU",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "12:10",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 1
+        },
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "15006",
+      "train_type": "PASSENGER",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "12:15",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "11020",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "12:26",
+      "speed_kmph": 100,
+      "delay_min": 2,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "15007",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "12:31",
+      "speed_kmph": 90,
+      "delay_min": 5,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 3
+        },
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "12625",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "12:54",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "12626",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "13:36",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "12611",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "13:56",
+      "speed_kmph": 100,
+      "delay_min": 2,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "22425",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "14:04",
+      "speed_kmph": 130,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13503",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "14:48",
+      "speed_kmph": 60,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "15008",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "14:59",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 2
+        },
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "13504",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "15:19",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13505",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "15:34",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "22426",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "15:45",
+      "speed_kmph": 130,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "55001",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "16:09",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "55002",
+      "train_type": "PASSENGER",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "16:17",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        },
+        {
+          "block_id": [
+            "ST_A2_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "55003",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "16:35",
+      "speed_kmph": 90,
+      "delay_min": 8,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 1
+        }
+      ]
+    },
+    {
+      "train_id": "64002",
+      "train_type": "MEMU",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "16:47",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "55004",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "17:02",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "15003",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "17:09",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "12612",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "17:34",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "12010",
+      "train_type": "SHATABDI",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "17:44",
+      "speed_kmph": 130,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "12025",
+      "train_type": "SHATABDI",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "17:57",
+      "speed_kmph": 130,
+      "delay_min": 8,
+      "stops": []
+    },
+    {
+      "train_id": "12723",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "18:26",
+      "speed_kmph": 100,
+      "delay_min": 8,
+      "stops": []
+    },
+    {
+      "train_id": "22435",
+      "train_type": "VANDE_BHARAT",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "18:51",
+      "speed_kmph": 130,
+      "delay_min": 8,
+      "stops": []
+    },
+    {
+      "train_id": "13506",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "18:59",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "14003",
+      "train_type": "MEMU",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "19:01",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "15004",
+      "train_type": "PASSENGER",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "19:12",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "15005",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "19:14",
+      "speed_kmph": 90,
+      "delay_min": 15,
+      "stops": []
+    },
+    {
+      "train_id": "15006",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "19:42",
+      "speed_kmph": 90,
+      "delay_min": 5,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "12724",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "20:07",
+      "speed_kmph": 100,
+      "delay_min": 5,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "14004",
+      "train_type": "MEMU",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "20:24",
+      "speed_kmph": 80,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B2_BC"
+          ],
+          "dwell_min": 1
+        },
+        {
+          "block_id": [
+            "ST_C1_BC"
+          ],
+          "dwell_min": 3
+        }
+      ]
+    },
+    {
+      "train_id": "15007",
+      "train_type": "PASSENGER",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "20:32",
+      "speed_kmph": 90,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "15008",
+      "train_type": "PASSENGER",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "20:57",
+      "speed_kmph": 90,
+      "delay_min": 5,
+      "stops": []
+    },
+    {
+      "train_id": "13507",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "21:11",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "12735",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "21:19",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": [
+        {
+          "block_id": [
+            "ST_B1_BC"
+          ],
+          "dwell_min": 2
+        }
+      ]
+    },
+    {
+      "train_id": "13508",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "21:36",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13509",
+      "train_type": "GOODS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "21:39",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "13510",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "22:40",
+      "speed_kmph": 60,
+      "delay_min": 15,
+      "stops": []
+    },
+    {
+      "train_id": "12736",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "22:42",
+      "speed_kmph": 100,
+      "delay_min": 2,
+      "stops": []
+    },
+    {
+      "train_id": "13501",
+      "train_type": "GOODS",
+      "line_id": "DN_MAIN",
+      "scheduled_time": "23:30",
+      "speed_kmph": 60,
+      "delay_min": 0,
+      "stops": []
+    },
+    {
+      "train_id": "11013",
+      "train_type": "MAIL_EXPRESS",
+      "line_id": "UP_MAIN",
+      "scheduled_time": "23:39",
+      "speed_kmph": 100,
+      "delay_min": 0,
+      "stops": []
+    }
+  ]
+}
