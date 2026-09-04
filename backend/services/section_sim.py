@@ -1,13 +1,14 @@
 import json
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 
 from backend.engine.train_movement import advance_train
 from backend.services.decision_state import active_decisions
 
 BLOCK_LENGTH_KM = 4.0
-TIME_SCALE = 0.5  # real seconds -> sim minutes (2 real sec = 1 sim min)
+TIME_SCALE = 0.5  # real seconds -> sim minutes (loop mode only)
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "config"
@@ -34,26 +35,33 @@ class SimTrain:
     _dwell_remaining: float = 0.0
 
 
+def _hhmm_to_minutes(t: str) -> int:
+    """Convert 'HH:MM' to minutes since midnight."""
+    h, m = t.split(":")
+    return int(h) * 60 + int(m)
+
+
 class SectionSim:
     """In-memory live section driven by a JSON timetable.
 
-    Trains spawn at the head of their line's traversal when the sim clock
-    reaches their (possibly delayed) entry time, move block-to-block by
-    sectional speed, dwell at scheduled stops (occupying the block), and
-    exit once they clear the section. The schedule loops so the map stays
-    live indefinitely. Occupancy follows absolute-block semantics: a
-    block|line is occupied until a train fully clears it.
+    Supports two modes controlled by the timetable's ``mode`` field:
 
-    Model: the full line consists of the stations listed in sections.json
-    `line_order`. Each station contributes its yard's lines and blocks
-    (globally-unique block ids), and the per-line traversal walks the
-    stations in order, so a single train crosses the entire line.
+    **loop** (default):
+        Trains spawn when the sim clock reaches their entry_min.  The
+        schedule loops so the map stays live indefinitely.
+
+    **realtime**:
+        The sim clock is wall-clock time (system time).  Trains are
+        scheduled by HH:MM and enter the line at that time of day.
+        On startup, trains whose schedule time has already passed *but
+        whose travel would not yet be complete* are placed partway along
+        the line so the map is populated immediately.
     """
 
     def __init__(
         self,
         line_config: str = "sections.json",
-        timetable_id: str = "proto_timetable",
+        timetable_id: str = "realtime_timetable",
     ):
         line_cfg = json.loads(
             (CONFIG_DIR / line_config).read_text(encoding="utf-8")
@@ -91,7 +99,23 @@ class SectionSim:
         timetable = json.loads(
             (TIMETABLES_DIR / f"{timetable_id}.json").read_text(encoding="utf-8")
         )
-        self.schedule = sorted(timetable["schedule"], key=lambda e: e["entry_min"])
+        self.mode: str = timetable.get("mode", "loop")
+
+        if self.mode == "realtime":
+            self.schedule = sorted(
+                timetable["schedule"],
+                key=lambda e: _hhmm_to_minutes(e["scheduled_time"]),
+            )
+            self._schedule_minutes: dict[int, list[dict]] = {}
+            for entry in self.schedule:
+                sm = _hhmm_to_minutes(entry["scheduled_time"])
+                self._schedule_minutes.setdefault(sm, []).append(entry)
+            self._scheduled_minute_set = sorted(self._schedule_minutes.keys())
+        else:
+            self.schedule = sorted(
+                timetable["schedule"], key=lambda e: e["entry_min"]
+            )
+
         for entry in self.schedule:
             entry["_spawned"] = False
 
@@ -100,15 +124,13 @@ class SectionSim:
         self._last_tick = time.monotonic()
         self._completed_trains = 0
 
+        # Realtime: back-fill trains already on the line at startup
+        if self.mode == "realtime":
+            self._realtime_init()
+
     # ---------- geometry ----------
 
     def _build_sequence(self, line_id: str) -> list[str]:
-        """Full-line traversal in station order.
-
-        Each line runs through every station: collect that station's blocks
-        that carry the line, order them by x (ascending), and append in
-        line_order. Blocks have globally-unique ids so cross-station next is
-        ``station i's last block -> station i+1's first block``."""
         blocks_with_line = [
             bid for bid, blk in self.blocks.items() if line_id in blk["lines"]
         ]
@@ -131,6 +153,9 @@ class SectionSim:
             return list(reversed(seq))
         return seq
 
+    def _traversal_len(self, line_id: str) -> int:
+        return len(self._traversal(line_id))
+
     def _next_block(self, train: SimTrain) -> str | None:
         return self._next_block_after(train.line_id, train.block_id)
 
@@ -152,9 +177,120 @@ class SectionSim:
     def occupied_lines(self) -> set[str]:
         return {f"{t.block_id}|{t.line_id}" for t in self.trains}
 
+    # ---------- wall-clock helpers ----------
+
+    @staticmethod
+    def _wall_minutes() -> int:
+        """Current time as minutes since midnight (local)."""
+        now = datetime.now()  # noqa: DTZ005 — local wall-clock, no tz needed
+        return now.hour * 60 + now.minute
+
+    def _travel_minutes(self, entry: dict) -> float:
+        """Estimated total travel time in sim-minutes for an entry."""
+        speed = entry.get("speed_kmph", 90)
+        total_blocks = self._traversal_len(entry["line_id"])
+        if speed <= 0:
+            return float("inf")
+        return (total_blocks * BLOCK_LENGTH_KM / speed) * 60
+
+    # ---------- realtime init ----------
+
+    def _realtime_init(self):
+        """On startup, spawn trains that should already be on the line.
+
+        For each scheduled entry whose time has passed, if the current
+        wall-clock time is still within the train's travel window, place
+        it partway along its route proportional to how much time has
+        elapsed since its scheduled departure."""
+        now_min = self._wall_minutes()
+        for entry in self.schedule:
+            sched_min = _hhmm_to_minutes(entry["scheduled_time"])
+            delay = entry.get("delay_min", 0)
+            effective_min = sched_min + delay
+
+            # Skip future trains — they'll spawn via _spawn_due
+            if effective_min > now_min:
+                continue
+
+            # Skip trains that have already completed their journey
+            travel = self._travel_minutes(entry)
+            if now_min > effective_min + travel + 5:
+                continue
+
+            # Skip if already spawned
+            if any(t.train_id == entry["train_id"] for t in self.trains):
+                continue
+
+            # Calculate how far along the route the train should be
+            elapsed = now_min - effective_min
+            total_blocks = self._traversal_len(entry["line_id"])
+            blocks_per_min = entry.get("speed_kmph", 90) / (BLOCK_LENGTH_KM * 60)
+            blocks_advanced = int(elapsed * blocks_per_min * BLOCK_LENGTH_KM)
+            blocks_advanced = min(blocks_advanced, total_blocks - 1)
+
+            seq = self._traversal(entry["line_id"])
+            head = seq[blocks_advanced] if blocks_advanced < len(seq) else seq[-1]
+
+            entry["_spawned"] = True
+            self.trains.append(
+                SimTrain(
+                    train_id=entry["train_id"],
+                    block_id=head,
+                    line_id=entry["line_id"],
+                    position=0.0,
+                    speed_kmph=entry["speed_kmph"],
+                    train_type=entry.get("train_type", "PASSENGER"),
+                    stops=[
+                        SimStop(s["block_id"], s["dwell_min"])
+                        for s in entry.get("stops", [])
+                    ],
+                )
+            )
+
     # ---------- scheduling ----------
 
     def _spawn_due(self):
+        if self.mode == "realtime":
+            self._spawn_due_realtime()
+        else:
+            self._spawn_due_loop()
+
+    def _spawn_due_realtime(self):
+        now_min = self._wall_minutes()
+        for entry in self.schedule:
+            if entry["_spawned"]:
+                continue
+            sched_min = _hhmm_to_minutes(entry["scheduled_time"])
+            delay = entry.get("delay_min", 0)
+            if now_min < sched_min + delay:
+                continue
+            seq = self._traversal(entry["line_id"])
+            if not seq:
+                entry["_spawned"] = True
+                continue
+            if any(t.train_id == entry["train_id"] for t in self.trains):
+                entry["_spawned"] = True
+                continue
+            head = seq[0]
+            if self._occupied(head, entry["line_id"]):
+                continue
+            entry["_spawned"] = True
+            self.trains.append(
+                SimTrain(
+                    train_id=entry["train_id"],
+                    block_id=head,
+                    line_id=entry["line_id"],
+                    position=0.0,
+                    speed_kmph=entry["speed_kmph"],
+                    train_type=entry.get("train_type", "PASSENGER"),
+                    stops=[
+                        SimStop(s["block_id"], s["dwell_min"])
+                        for s in entry.get("stops", [])
+                    ],
+                )
+            )
+
+    def _spawn_due_loop(self):
         for entry in self.schedule:
             if entry["_spawned"]:
                 continue
@@ -166,7 +302,6 @@ class SectionSim:
                 entry["_spawned"] = True
                 continue
             if any(t.train_id == entry["train_id"] for t in self.trains):
-                # already on the map (e.g. seeded from a decision) — don't duplicate
                 entry["_spawned"] = True
                 continue
             head = seq[0]
@@ -189,7 +324,9 @@ class SectionSim:
             )
 
     def _loop_reset(self):
-        if not self.trains and all(e["_spawned"] for e in self.schedule):
+        if self.mode == "loop" and not self.trains and all(
+            e["_spawned"] for e in self.schedule
+        ):
             self._elapsed_min = 0.0
             self._completed_trains = 0
             for entry in self.schedule:
@@ -201,8 +338,6 @@ class SectionSim:
         return {d["train_id"]: d for d in active_decisions()}
 
     def _seed_from_decisions(self, decisions: dict[str, dict]):
-        """Spawn a sim train for a decided train that is not yet on the map,
-        so a controller-created train from POST /decision appears in motion."""
         for decision in decisions.values():
             train_id = decision["train_id"]
             if any(t.train_id == train_id for t in self.trains):
@@ -228,7 +363,6 @@ class SectionSim:
             )
 
     def train_type(self, train_id: str) -> str:
-        """Train class for a live sim train (used by the advisory layer)."""
         for t in self.trains:
             if t.train_id == train_id:
                 return t.train_type
@@ -246,7 +380,6 @@ class SectionSim:
             decision = decisions.get(train.train_id)
 
             if decision and not decision["allow_movement"]:
-                # HOLD: train stops where it is until a release decision
                 train.position = min(train.position, 1.0)
                 continue
 
@@ -261,7 +394,6 @@ class SectionSim:
             effective_speed = train.speed_kmph
             if decision and decision.get("max_speed"):
                 effective_speed = min(train.speed_kmph, decision["max_speed"])
-            # Delegate constant-speed progression to the shared engine module.
             saved_speed = train.speed_kmph
             train.speed_kmph = effective_speed
             advance_train(train, delta_min, BLOCK_LENGTH_KM)
@@ -270,7 +402,7 @@ class SectionSim:
             if train.position < 1.0:
                 continue
 
-            train.position = 1.0  # fully cleared current block
+            train.position = 1.0
 
             for stop in train.stops:
                 if stop.block_id == train.block_id and stop.block_id not in train._dwelled:
@@ -285,7 +417,6 @@ class SectionSim:
                 train.block_id = next_block
                 train.position = 0.0
             elif not next_block:
-                # Terminal block cleared — train leaves the line
                 self.trains.remove(train)
                 self._completed_trains += 1
 

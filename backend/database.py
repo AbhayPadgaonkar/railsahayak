@@ -10,6 +10,7 @@ import atexit
 import logging
 import os
 
+import prisma.errors
 from prisma import Prisma
 
 logger = logging.getLogger(__name__)
@@ -61,10 +62,22 @@ def _disconnect() -> None:
 def reset_database() -> None:
     """Truncate all Prisma-managed tables. Useful for test isolation."""
     db = get_client()
-    db.auditaction.delete_many()
-    db.crisis.delete_many()
-    db.decision.delete_many()
-    db.session.delete_many()
+    try:
+        db.auditaction.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
+    try:
+        db.crisis.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
+    try:
+        db.decision.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
+    try:
+        db.session.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
 
 
 def migrate() -> None:
