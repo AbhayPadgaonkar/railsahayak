@@ -41,7 +41,7 @@
       "from_line": "UP_MAIN",
       "from_x": 450,
       "to_line": "UP_LOOP",
-      "to_x": 500
+      "to_x": 550
     },
     {
       "id": "T2_ST_A1",
@@ -55,7 +55,7 @@
       "from_line": "DN_MAIN",
       "from_x": 450,
       "to_line": "DN_LOOP",
-      "to_x": 500
+      "to_x": 550
     },
     {
       "id": "T4_ST_A1",
@@ -94,7 +94,7 @@
       "id": "Loop_Starter_UP_ST_A1",
       "name": "Loop Starter UP",
       "line": "UP_LOOP",
-      "at_x": 500,
+      "at_x": 550,
       "initial_state": "red"
     },
     {
@@ -132,7 +132,7 @@
       "id": "Loop_Starter_DN_ST_A1",
       "name": "Loop Starter DN",
       "line": "DN_LOOP",
-      "at_x": 500,
+      "at_x": 550,
       "initial_state": "red"
     },
     {
