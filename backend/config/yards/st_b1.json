@@ -132,8 +132,7 @@
       "id": "ST_B1_BC",
       "next_blocks": [
         "ST_B1_AB",
-        "ST_B1_CD",
-        "ST_B2_BC"
+        "ST_B1_CD"
       ],
       "lines": [
         {

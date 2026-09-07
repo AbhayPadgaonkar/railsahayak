@@ -96,8 +96,7 @@
       "id": "ST_C1_BC",
       "next_blocks": [
         "ST_C1_AB",
-        "ST_C1_CD",
-        "ST_C2_BC"
+        "ST_C1_CD"
       ],
       "lines": [
         {
