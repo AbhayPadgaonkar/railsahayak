@@ -32,6 +32,14 @@ SCENARIOS: dict[str, dict] = {
         "label": "Priority pass (downgrade)",
         "description": "Reclassify the train to a low-priority class; predicted delay rises accordingly.",
     },
+    "TURNOUT_FAILURE": {
+        "label": "Turnout failure",
+        "description": "A turnout is jammed/locked; trains that need it must hold or reroute.",
+    },
+    "BLOCK_FAILURE": {
+        "label": "Block occupation / failure",
+        "description": "A block is occupied or track-failed; trains cannot enter until cleared.",
+    },
 }
 
 
@@ -116,6 +124,8 @@ def run_scenario(
     current_time: int = 1000,
     gradient: dict | None = None,
     condition: str | None = None,
+    turnout_id: str | None = None,
+    block_failure_id: str | None = None,
 ) -> dict:
     """Simulate a what-if: compare baseline vs a perturbed run of one train.
 
@@ -136,6 +146,12 @@ def run_scenario(
         scen_grad = {"value": int(parameter or 150), "direction": direction}
     elif scenario_type == "HOLD":
         pass
+    elif scenario_type == "TURNOUT_FAILURE":
+        scen_blocked = True
+        scen_reason = f"Turnout {turnout_id or 'T1'} jammed — train must hold"
+    elif scenario_type == "BLOCK_FAILURE":
+        scen_blocked = True
+        scen_reason = f"Block {block_failure_id or block_id} occupied/failed — cannot enter"
 
     base_type = train_type
     scen_type = train_type
@@ -151,14 +167,18 @@ def run_scenario(
 
     if scenario_type == "HOLD":
         scen_delay = round(scen_delay + int(parameter or 15), 1)
+    elif scenario_type in ("TURNOUT_FAILURE", "BLOCK_FAILURE"):
+        # Estimate 10–20 min additional delay from reroute/hold
+        scen_delay = round(scen_delay + 15.0, 1)
 
     base_verdict = _speed_verdict(sectional_speed, condition, gradient)
     scen_verdict = _speed_verdict(scen_speed, scen_cond, scen_grad)
 
-    scen_blocked = False
-    scen_reason = scen_verdict["reason"]
+    if scenario_type not in ("TURNOUT_FAILURE", "BLOCK_FAILURE"):
+        scen_blocked = False
+    scen_reason = scen_reason if scen_blocked else scen_verdict["reason"]
     base_reason = base_verdict["reason"]
-    scen_max = scen_verdict["max_speed"]
+    scen_max = None if scen_blocked else scen_verdict["max_speed"]
 
     if scenario_type == "HOLD":
         signal = check_signal_permission(

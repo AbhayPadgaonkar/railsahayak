@@ -32,6 +32,8 @@ class WhatIfRunRequest(BaseModel):
     current_time: int = 1000
     gradient: dict | None = None
     condition: str | None = None
+    turnout_id: str | None = None
+    block_failure_id: str | None = None
 
 
 class WhatIfRunResponse(BaseModel):
@@ -86,6 +88,8 @@ def run(payload: WhatIfRunRequest):
             current_time=payload.current_time,
             gradient=payload.gradient,
             condition=payload.condition,
+            turnout_id=payload.turnout_id,
+            block_failure_id=payload.block_failure_id,
         )
     except KeyError:
         raise HTTPException(status_code=422, detail="Invalid train_type")

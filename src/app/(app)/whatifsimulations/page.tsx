@@ -21,6 +21,17 @@ const TRAIN_TYPES = [
 
 const LINES = ["UP_MAIN", "UP_LOOP", "DN_MAIN", "DN_LOOP"];
 
+const TURNOUTS = [
+  "T1_ST_A1", "T2_ST_A1", "T3_ST_A1", "T4_ST_A1",
+  "T1_ST_B1", "T2_ST_B1", "T3_ST_B1", "T4_ST_B1",
+  "T1_ST_C1", "T2_ST_C1", "T3_ST_C1", "T4_ST_C1",
+];
+
+const BLOCKS = [
+  "ST_A1_AB", "ST_A1_BC", "ST_B1_BC", "ST_B1_CD",
+  "ST_C1_CD", "ST_C1_DE", "ST_A2_AB", "ST_B2_BC", "ST_C2_CD",
+];
+
 const inputCls =
   "w-full rounded-lg bg-slate-950 border border-slate-700 px-2.5 py-1.5 text-sm outline-none focus:border-sky-500 transition-colors";
 const labelCls = "block text-xs text-slate-400 mb-1";
@@ -40,6 +51,8 @@ const WhatIfPage = () => {
   const [scenarioType, setScenarioType] = useState("FOG");
   const [parameter, setParameter] = useState("");
   const [direction, setDirection] = useState("UP");
+  const [turnoutId, setTurnoutId] = useState("T1_ST_A1");
+  const [blockFailureId, setBlockFailureId] = useState("ST_A1_AB");
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<WhatIfResult | null>(null);
 
@@ -90,6 +103,8 @@ const WhatIfPage = () => {
         scenario_type: scenarioType,
         parameter: parameter === "" ? null : num(parameter),
         direction,
+        turnout_id: scenarioType === "TURNOUT_FAILURE" ? turnoutId : null,
+        block_failure_id: scenarioType === "BLOCK_FAILURE" ? blockFailureId : null,
       });
       setResult(res);
     } catch (e) {
@@ -247,6 +262,38 @@ const WhatIfPage = () => {
                   />
                 </div>
               )}
+              {scenarioType === "TURNOUT_FAILURE" && (
+                <div>
+                  <label className={labelCls}>Jam turnout</label>
+                  <select
+                    className={inputCls}
+                    value={turnoutId}
+                    onChange={(e) => setTurnoutId(e.target.value)}
+                  >
+                    {TURNOUTS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {scenarioType === "BLOCK_FAILURE" && (
+                <div>
+                  <label className={labelCls}>Failed block</label>
+                  <select
+                    className={inputCls}
+                    value={blockFailureId}
+                    onChange={(e) => setBlockFailureId(e.target.value)}
+                  >
+                    {BLOCKS.map((b) => (
+                      <option key={b} value={b}>
+                        {b}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             {scenario && (
               <p className="text-xs text-slate-500 mt-3">{scenario.description}</p>
@@ -259,6 +306,73 @@ const WhatIfPage = () => {
               {running ? "Running…" : "Run Simulation"}
             </button>
           </div>
+
+          {(scenarioType === "TURNOUT_FAILURE" || scenarioType === "BLOCK_FAILURE") && (
+            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+              <h2 className="font-semibold text-white text-sm mb-3">
+                {scenarioType === "TURNOUT_FAILURE" ? "Turnout Map" : "Block Map"}
+              </h2>
+              <div className="relative h-48 bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+                {scenarioType === "TURNOUT_FAILURE" ? (
+                  <svg viewBox="0 0 400 160" className="w-full h-full">
+                    {/* UP_MAIN */}
+                    <line x1="0" y1="40" x2="400" y2="40" stroke="#334155" strokeWidth="3" />
+                    {/* UP_LOOP */}
+                    <line x1="120" y1="10" x2="280" y2="10" stroke="#334155" strokeWidth="3" />
+                    {/* DN_MAIN */}
+                    <line x1="0" y1="120" x2="400" y2="120" stroke="#334155" strokeWidth="3" />
+                    {/* DN_LOOP */}
+                    <line x1="120" y1="150" x2="280" y2="150" stroke="#334155" strokeWidth="3" />
+                    {/* Turnout lines */}
+                    <line x1="120" y1="40" x2="120" y2="10" stroke="#475569" strokeWidth="2" />
+                    <line x1="280" y1="10" x2="280" y2="40" stroke="#475569" strokeWidth="2" />
+                    <line x1="120" y1="120" x2="120" y2="150" stroke="#475569" strokeWidth="2" />
+                    <line x1="280" y1="150" x2="280" y2="120" stroke="#475569" strokeWidth="2" />
+                    {/* Turnout markers */}
+                    <circle cx="120" cy="40" r="6" fill={turnoutId === "T1_ST_A1" ? "#ef4444" : "#10b981"} />
+                    <circle cx="280" cy="40" r="6" fill={turnoutId === "T2_ST_A1" ? "#ef4444" : "#10b981"} />
+                    <circle cx="280" cy="120" r="6" fill={turnoutId === "T3_ST_A1" ? "#ef4444" : "#10b981"} />
+                    <circle cx="120" cy="120" r="6" fill={turnoutId === "T4_ST_A1" ? "#ef4444" : "#10b981"} />
+                    {/* Labels */}
+                    <text x="200" y="5" textAnchor="middle" fill="#94a3b8" fontSize="10">UP_LOOP</text>
+                    <text x="200" y="35" textAnchor="middle" fill="#94a3b8" fontSize="10">UP_MAIN</text>
+                    <text x="200" y="115" textAnchor="middle" fill="#94a3b8" fontSize="10">DN_MAIN</text>
+                    <text x="200" y="155" textAnchor="middle" fill="#94a3b8" fontSize="10">DN_LOOP</text>
+                    <text x="120" y="70" textAnchor="middle" fill="#64748b" fontSize="8">T1</text>
+                    <text x="280" y="70" textAnchor="middle" fill="#64748b" fontSize="8">T2</text>
+                    <text x="280" y="100" textAnchor="middle" fill="#64748b" fontSize="8">T3</text>
+                    <text x="120" y="100" textAnchor="middle" fill="#64748b" fontSize="8">T4</text>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 400 160" className="w-full h-full">
+                    {/* Block sections */}
+                    <rect x="20" y="50" width="100" height="60" rx="4" fill={blockFailureId === "ST_A1_AB" ? "#7f1d1d" : "#064e3b"} stroke={blockFailureId === "ST_A1_AB" ? "#ef4444" : "#10b981"} strokeWidth="2" />
+                    <rect x="140" y="50" width="100" height="60" rx="4" fill={blockFailureId === "ST_A1_BC" ? "#7f1d1d" : "#064e3b"} stroke={blockFailureId === "ST_A1_BC" ? "#ef4444" : "#10b981"} strokeWidth="2" />
+                    <rect x="260" y="50" width="100" height="60" rx="4" fill={blockFailureId === "ST_B1_BC" ? "#7f1d1d" : "#064e3b"} stroke={blockFailureId === "ST_B1_BC" ? "#ef4444" : "#10b981"} strokeWidth="2" />
+                    {/* Block labels */}
+                    <text x="70" y="85" textAnchor="middle" fill="#e2e8f0" fontSize="10">ST_A1_AB</text>
+                    <text x="190" y="85" textAnchor="middle" fill="#e2e8f0" fontSize="10">ST_A1_BC</text>
+                    <text x="310" y="85" textAnchor="middle" fill="#e2e8f0" fontSize="10">ST_B1_BC</text>
+                    {/* Track lines */}
+                    <line x1="20" y1="40" x2="360" y2="40" stroke="#475569" strokeWidth="2" strokeDasharray="4" />
+                    <line x1="20" y1="120" x2="360" y2="120" stroke="#475569" strokeWidth="2" strokeDasharray="4" />
+                    {/* Status indicator */}
+                    {blockFailureId && (
+                      <g>
+                        <circle cx="380" cy="80" r="8" fill="#ef4444" />
+                        <text x="380" y="84" textAnchor="middle" fill="white" fontSize="10">✕</text>
+                      </g>
+                    )}
+                  </svg>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 mt-2">
+                {scenarioType === "TURNOUT_FAILURE"
+                  ? `Turnout ${turnoutId} highlighted in red — trains requiring this turnout must hold`
+                  : `Block ${blockFailureId} highlighted in red — trains cannot enter until cleared`}
+              </p>
+            </div>
+          )}
 
           {result && (
             <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
