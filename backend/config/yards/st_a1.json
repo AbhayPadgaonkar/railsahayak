@@ -8,61 +8,61 @@
   "lines": [
     {
       "id": "UP_MAIN",
-      "y": 150,
+      "y": 154,
       "direction": "UP",
       "from_x": 0,
       "to_x": 1000
     },
     {
       "id": "DN_MAIN",
-      "y": 250,
+      "y": 254,
       "direction": "DN",
       "from_x": 0,
       "to_x": 1000
     },
     {
       "id": "UP_LOOP",
-      "y": 70,
+      "y": 54,
       "direction": "COMMON",
-      "from_x": 250,
-      "to_x": 750
+      "from_x": 400,
+      "to_x": 600
     },
     {
       "id": "DN_LOOP",
-      "y": 330,
+      "y": 354,
       "direction": "COMMON",
-      "from_x": 250,
-      "to_x": 750
+      "from_x": 400,
+      "to_x": 600
     }
   ],
   "turnouts": [
     {
       "id": "T1_ST_A1",
       "from_line": "UP_MAIN",
-      "from_x": 450,
+      "from_x": 300,
       "to_line": "UP_LOOP",
-      "to_x": 550
+      "to_x": 400
     },
     {
       "id": "T2_ST_A1",
       "from_line": "UP_LOOP",
-      "from_x": 700,
+      "from_x": 600,
       "to_line": "UP_MAIN",
-      "to_x": 800
+      "to_x": 700
     },
     {
       "id": "T3_ST_A1",
       "from_line": "DN_MAIN",
-      "from_x": 450,
+      "from_x": 700,
       "to_line": "DN_LOOP",
-      "to_x": 550
+      "to_x": 600
     },
     {
       "id": "T4_ST_A1",
       "from_line": "DN_LOOP",
-      "from_x": 700,
+      "from_x": 400,
       "to_line": "DN_MAIN",
-      "to_x": 800
+      "to_x": 300
     }
   ],
   "signals": [
@@ -75,13 +75,13 @@
     {
       "id": "Home_UP_ST_A1",
       "line": "UP_MAIN",
-      "at_x": 250,
+      "at_x": 300,
       "initial_state": "red"
     },
     {
       "id": "Starter_UP_ST_A1",
       "line": "UP_MAIN",
-      "at_x": 800,
+      "at_x": 700,
       "initial_state": "green"
     },
     {
@@ -94,14 +94,14 @@
       "id": "Loop_Starter_UP_ST_A1",
       "name": "Loop Starter UP",
       "line": "UP_LOOP",
-      "at_x": 550,
+      "at_x": 400,
       "initial_state": "red"
     },
     {
       "id": "Loop_Exit_UP_ST_A1",
       "name": "Loop Exit UP",
       "line": "UP_LOOP",
-      "at_x": 700,
+      "at_x": 600,
       "initial_state": "green"
     },
     {
@@ -113,13 +113,13 @@
     {
       "id": "Home_DN_ST_A1",
       "line": "DN_MAIN",
-      "at_x": 750,
+      "at_x": 700,
       "initial_state": "green"
     },
     {
       "id": "Starter_DN_ST_A1",
       "line": "DN_MAIN",
-      "at_x": 450,
+      "at_x": 300,
       "initial_state": "green"
     },
     {
@@ -132,14 +132,14 @@
       "id": "Loop_Starter_DN_ST_A1",
       "name": "Loop Starter DN",
       "line": "DN_LOOP",
-      "at_x": 550,
+      "at_x": 600,
       "initial_state": "red"
     },
     {
       "id": "Loop_Exit_DN_ST_A1",
       "name": "Loop Exit DN",
       "line": "DN_LOOP",
-      "at_x": 700,
+      "at_x": 400,
       "initial_state": "green"
     }
   ],
@@ -153,12 +153,12 @@
         {
           "line": "UP_MAIN",
           "from_x": 0,
-          "to_x": 450
+          "to_x": 300
         },
         {
           "line": "DN_MAIN",
           "from_x": 0,
-          "to_x": 450
+          "to_x": 300
         }
       ]
     },
@@ -166,29 +166,28 @@
       "id": "ST_A1_BC",
       "next_blocks": [
         "ST_A1_AB",
-        "ST_A1_CD",
-        "ST_A2_BC"
+        "ST_A1_CD"
       ],
       "lines": [
         {
           "line": "UP_MAIN",
-          "from_x": 450,
-          "to_x": 800
+          "from_x": 300,
+          "to_x": 700
         },
         {
           "line": "DN_MAIN",
-          "from_x": 450,
-          "to_x": 800
+          "from_x": 300,
+          "to_x": 700
         },
         {
           "line": "UP_LOOP",
-          "from_x": 250,
-          "to_x": 750
+          "from_x": 400,
+          "to_x": 600
         },
         {
           "line": "DN_LOOP",
-          "from_x": 250,
-          "to_x": 750
+          "from_x": 400,
+          "to_x": 600
         }
       ]
     },
@@ -201,12 +200,12 @@
       "lines": [
         {
           "line": "UP_MAIN",
-          "from_x": 800,
+          "from_x": 700,
           "to_x": 1000
         },
         {
           "line": "DN_MAIN",
-          "from_x": 800,
+          "from_x": 700,
           "to_x": 1000
         }
       ]
@@ -217,20 +216,20 @@
       "id": "TC_ST_A1_UP_ENTRY",
       "line": "UP_MAIN",
       "from_x": 0,
-      "to_x": 450,
+      "to_x": 300,
       "block": "ST_A1_AB"
     },
     {
       "id": "TC_ST_A1_UP_MID",
       "line": "UP_MAIN",
-      "from_x": 450,
-      "to_x": 800,
+      "from_x": 300,
+      "to_x": 700,
       "block": "ST_A1_BC"
     },
     {
       "id": "TC_ST_A1_UP_EXIT",
       "line": "UP_MAIN",
-      "from_x": 800,
+      "from_x": 700,
       "to_x": 1000,
       "block": "ST_A1_CD"
     },
@@ -238,35 +237,35 @@
       "id": "TC_ST_A1_DN_EXIT",
       "line": "DN_MAIN",
       "from_x": 0,
-      "to_x": 450,
+      "to_x": 300,
       "block": "ST_A1_AB"
     },
     {
       "id": "TC_ST_A1_DN_MID",
       "line": "DN_MAIN",
-      "from_x": 450,
-      "to_x": 800,
+      "from_x": 300,
+      "to_x": 700,
       "block": "ST_A1_BC"
     },
     {
       "id": "TC_ST_A1_DN_ENTRY",
       "line": "DN_MAIN",
-      "from_x": 800,
+      "from_x": 700,
       "to_x": 1000,
       "block": "ST_A1_CD"
     },
     {
       "id": "TC_ST_A1_UP_LOOP",
       "line": "UP_LOOP",
-      "from_x": 250,
-      "to_x": 750,
+      "from_x": 400,
+      "to_x": 600,
       "block": "ST_A1_BC"
     },
     {
       "id": "TC_ST_A1_DN_LOOP",
       "line": "DN_LOOP",
-      "from_x": 250,
-      "to_x": 750,
+      "from_x": 400,
+      "to_x": 600,
       "block": "ST_A1_BC"
     }
   ],
@@ -274,22 +273,22 @@
     {
       "text": "UP MAIN",
       "x": 10,
-      "y": 140
+      "y": 144
     },
     {
       "text": "DN MAIN",
       "x": 10,
-      "y": 270
+      "y": 264
     },
     {
       "text": "UP LOOP",
-      "x": 250,
-      "y": 60
+      "x": 400,
+      "y": 44
     },
     {
       "text": "DN LOOP",
-      "x": 250,
-      "y": 320
+      "x": 400,
+      "y": 374
     }
   ]
 }

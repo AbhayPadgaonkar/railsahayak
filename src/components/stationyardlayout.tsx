@@ -140,7 +140,7 @@ const StationYardLayout = ({
         <svg viewBox={yard.viewBox} className="min-w-[720px] w-full h-full rounded-md">
           {signals.map((signal) => {
           const poleHeight = 52; // total signal height
-          const bodyHeight = 36; // box size
+          const bodyHeight = 46; // box size
           const state =
             (signal.state as string) === "yellow"
               ? "single_yellow"
@@ -163,11 +163,11 @@ const StationYardLayout = ({
 
               {/* Signal box (above rod) */}
               <rect
-                x={-6}
-                y={poleHeight - bodyHeight - 15}
-                width={12}
+                x={-5}
+                y={poleHeight - bodyHeight - 5}
+                width={10}
                 height={bodyHeight}
-                rx={3}
+                rx={2}
                 fill="#4d4d4d"
                 stroke="#555"
                 strokeWidth="0.5"
@@ -176,38 +176,38 @@ const StationYardLayout = ({
               {/* Red */}
               <circle
                 cx={0}
-                cy={poleHeight - bodyHeight - 6}
-                r={3.5}
+                cy={poleHeight - bodyHeight + 7}
+                r={3}
                 fill={state === "red" ? "red" : "#330000"}
               />
               {/* Single yellow */}
               <circle
                 cx={0}
-                cy={poleHeight - bodyHeight + 4}
-                r={3.5}
-                fill={state === "single_yellow" ? "#facc15" : "#332200"}
+                cy={poleHeight - bodyHeight + 17}
+                r={3}
+                fill={state === "single_yellow" || state === "double_yellow" ? "#facc15" : "#332200"}
               />
               {/* Double yellow */}
               <circle
                 cx={0}
-                cy={state === "double_yellow" ? poleHeight - bodyHeight + 14 : poleHeight - bodyHeight + 14}
-                r={3.5}
+                cy={poleHeight - bodyHeight + 27}
+                r={3}
                 fill={state === "double_yellow" ? "#facc15" : "#332200"}
               />
               {/* Green */}
               <circle
                 cx={0}
-                cy={poleHeight - bodyHeight + 24}
-                r={3.5}
+                cy={poleHeight - bodyHeight + 37}
+                r={3}
                 fill={state === "green" ? "limegreen" : "#002200"}
               />
 
-              {/* Label */}
+              {/* Label above signal */}
               <text
                 x={0}
-                y={poleHeight - 58}
+                y={-8}
                 textAnchor="middle"
-                fontSize="9"
+                fontSize="8"
                 fill="#aaa"
                 fontFamily="sans-serif"
               >

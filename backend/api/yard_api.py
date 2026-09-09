@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from backend.api.permissions import (
     ControllerSection,
@@ -58,3 +59,27 @@ def get_yard_layout(
         raise HTTPException(status_code=404, detail=f"No yard layout for station '{station}'")
 
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+class YardSaveRequest(BaseModel):
+    station_id: str
+    station_name: str
+    canvas: dict
+    lines: list[dict]
+    turnouts: list[dict]
+    signals: list[dict]
+    blocks: list[dict]
+    sections: list[dict] | None = None
+    labels: list[dict] | None = None
+
+
+@router.post("/yard/save")
+def save_yard_layout(payload: YardSaveRequest):
+    station = payload.station_id.lower()
+    if not STATION_ID_PATTERN.match(station):
+        raise HTTPException(status_code=400, detail="Invalid station id")
+
+    yard_data = payload.model_dump()
+    path = YARDS_DIR / f"{station}.json"
+    path.write_text(json.dumps(yard_data, indent=2), encoding="utf-8")
+    return {"status": "ok", "path": str(path)}

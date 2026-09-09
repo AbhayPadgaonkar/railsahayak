@@ -140,6 +140,98 @@ def get_sensor_snapshot(
             continue
         signals[signal["id"]] = _aspect(section_id)
 
+    # --- Signal interlocking ---
+    # Loop Starter can only clear if:
+    #   1. The loop block ahead is clear
+    #   2. A train is approaching from the main line (Home shows non-red)
+    #      OR a train is already in the loop block
+    # Loop Exit can only clear if:
+    #   1. The main line block ahead is clear
+    #   2. A train is in the loop block approaching the exit
+    yard_blocks = yard.get("blocks", [])
+    yard_signals = yard.get("signals", [])
+
+    def _block_at(line_id, x):
+        for blk in yard_blocks:
+            for ln in blk.get("lines", []):
+                if ln["line"] == line_id and ln["from_x"] <= x <= ln["to_x"]:
+                    return blk["id"]
+        return None
+
+    sig_map = {s["id"]: s for s in yard_signals}
+
+    for sig in yard_signals:
+        sid = sig["id"]
+
+        if "Loop_Starter" in sid:
+            # Find the corresponding Home signal on the main line
+            direction = "UP" if "UP" in sid else "DN"
+            home_id = f"Home_{direction}_{sid.split('_')[-2]}_{sid.split('_')[-1]}"
+            # Try pattern: Loop_Starter_UP_ST_A1 → Home_UP_ST_A1
+            parts = sid.split("_")
+            station_suffix = "_".join(parts[2:])  # e.g. ST_A1
+            home_id = f"Home_{direction}_{station_suffix}"
+
+            home_sig = sig_map.get(home_id)
+
+            # Check if loop block ahead is clear
+            loop_line = sig["line"]
+            loop_x = sig["at_x"]
+            loop_block = _block_at(loop_line, loop_x)
+            loop_clear = not _is_occupied(loop_block, loop_line) if loop_block else False
+
+            # Check if a train is approaching from main line (in the block before Home)
+            train_approaching = False
+            if home_sig:
+                home_section = _section_containing(sections, home_sig["line"], home_sig["at_x"])
+                if home_section:
+                    sec = next((s for s in sections if s["id"] == home_section), None)
+                    if sec:
+                        prev_block = sec["block"]
+                        prev_line = sec["line"]
+                        train_approaching = _is_occupied(prev_block, prev_line)
+
+            # Train already in loop?
+            train_in_loop = False
+            if loop_block:
+                train_in_loop = _is_occupied(loop_block, loop_line)
+
+            if not loop_clear or (not train_approaching and not train_in_loop):
+                signals[sid] = "red"
+
+        elif "Loop_Exit" in sid:
+            # Find the corresponding Starter signal on the main line
+            direction = "UP" if "UP" in sid else "DN"
+            parts = sid.split("_")
+            station_suffix = "_".join(parts[2:])
+            starter_id = f"Starter_{direction}_{station_suffix}"
+
+            starter_aspect = signals.get(starter_id, "red")
+
+            # Check if main line block ahead is clear
+            # The Loop Exit is at x=600 on UP_LOOP. The train re-joins UP_MAIN.
+            # The next block on UP_MAIN starts at x=700 (Starter position).
+            loop_line = sig["line"]
+            loop_x = sig["at_x"]
+            # Find the main line and the block after the rejoin point
+            main_line = f"{direction}_MAIN"
+            # The rejoin point is at the same x as the Starter signal
+            main_x = loop_x  # rejoin at same x as loop exit
+            main_block = _block_at(main_line, main_x)
+            main_clear = not _is_occupied(main_block, main_line) if main_block else False
+
+            # Train in the loop approaching exit?
+            train_in_loop = False
+            if loop_block := _block_at(loop_line, loop_x):
+                # Check the block just before the loop exit signal
+                for blk in yard_blocks:
+                    for ln in blk.get("lines", []):
+                        if ln["line"] == loop_line and ln["to_x"] == loop_x:
+                            train_in_loop = _is_occupied(blk["id"], loop_line)
+
+            if not main_clear or starter_aspect == "red":
+                signals[sid] = "red"
+
     return {
         "station_id": yard["station_id"],
         "zones": zones,
