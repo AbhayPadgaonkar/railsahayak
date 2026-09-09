@@ -29,12 +29,14 @@ class AlertResolve(BaseModel):
 @router.get("/alerts")
 def list_alerts(section: str | None = None, status: str | None = None):
     db = get_client()
-    where: dict = {}
-    if section:
-        where["section"] = section
-    if status:
-        where["status"] = status
-    rows = db.alert.find_many(where=where, order={"created_at": "desc"})
+    if section and status:
+        rows = db.alert.find_many(where={"section": section, "status": status}, order={"created_at": "desc"})
+    elif section:
+        rows = db.alert.find_many(where={"section": section}, order={"created_at": "desc"})
+    elif status:
+        rows = db.alert.find_many(where={"status": status}, order={"created_at": "desc"})
+    else:
+        rows = db.alert.find_many(order={"created_at": "desc"})
     return [
         {
             "id": r.id,
