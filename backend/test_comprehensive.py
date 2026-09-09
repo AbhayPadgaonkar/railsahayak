@@ -3,8 +3,6 @@
 Covers: normal cases, edge cases, scenario cases, signal interlocking,
 precedence optimization, speed rules, and cross-section behavior.
 """
-from unittest.mock import patch
-
 import pytest
 from fastapi import HTTPException
 
@@ -59,10 +57,7 @@ def _context(**overrides):
 
 
 def _decision(trains, context):
-    with patch("backend.services.decision_service.disaster_active", return_value=False), \
-         patch("backend.services.decision_service.record_decision"), \
-         patch("backend.services.decision_service.record_action"):
-        return make_decision(SectionDecisionRequest(trains=trains, context=context))
+    return make_decision(SectionDecisionRequest(trains=trains, context=context))
 
 
 CONTEXT_FIELDS = {"disaster_active", "occupied_lines", "occupied_turnouts", "fouling_segments"}
@@ -351,7 +346,6 @@ class TestPrecedenceOptimizer:
         orders = {o.train_id: o.order for o in result.optimized_order}
         assert orders["MAIL-A"] != orders["MAIL-B"]
 
-    @pytest.mark.skip(reason="Requires database for audit table")
     def test_optimization_recorded_in_audit(self):
         from backend.services.decision_state import record_action
         record_action("__reset", {})
