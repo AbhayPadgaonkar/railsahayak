@@ -173,7 +173,6 @@ def get_sensor_snapshot(
             home_id = f"Home_{direction}_{station_suffix}"
 
             home_sig = sig_map.get(home_id)
-            home_aspect = signals.get(home_id, "red")
 
             # Check if loop block ahead is clear
             loop_line = sig["line"]

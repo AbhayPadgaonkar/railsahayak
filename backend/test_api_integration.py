@@ -21,7 +21,6 @@ def _login(controller_id: str, password: str) -> str:
 
 @pytest.fixture(autouse=True)
 def setup_tokens():
-    global TOKENS
     if not TOKENS:
         TOKENS["CCG-VR"] = _login("CCG-VR", "ccgvr123")
         TOKENS["VR-VLSD"] = _login("VR-VLSD", "vrvlsd123")
@@ -246,7 +245,7 @@ class TestAdvisoryEndpoint:
     def test_advisory_has_section_context(self):
         resp = client.get("/advisory", headers=_auth(TOKENS["CCG-VR"]))
         data = resp.json()
-        if "advisories" in data and data["advisories"]:
+        if data.get("advisories"):
             adv = data["advisories"][0]
             assert "section_id" in adv
             assert "section_name" in adv
