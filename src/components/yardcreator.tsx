@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import type {
   YardSchema,
   YardLine,
   YardSignal,
   YardTurnout,
-  YardBlock,
-  YardBlockSpan,
 } from "@/lib/yardlayout/schema";
 import { buildYardLayout } from "@/lib/yardlayout/builder";
 
@@ -107,6 +105,7 @@ export default function YardCreator() {
         return;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [tool, getSvgCoords]
   );
 
@@ -141,6 +140,7 @@ export default function YardCreator() {
         return;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [dragStart, tool, getSvgCoords]
   );
 
@@ -202,46 +202,6 @@ export default function YardCreator() {
 
   function findLineAt(y: number): YardLine | undefined {
     return yard.lines.find((l) => Math.abs(l.y - y) < 30);
-  }
-
-  function addBlockBoundary(x: number) {
-    const existing = yard.blocks.flatMap((b) =>
-      b.lines.flatMap((l) => [l.from_x, l.to_x])
-    );
-    if (existing.includes(x)) return;
-
-    const newBlocks: YardBlock[] = [];
-    for (const block of yard.blocks) {
-      const newLines: YardBlockSpan[] = [];
-      for (const span of block.lines) {
-        if (x > span.from_x && x < span.to_x) {
-          newLines.push({ line: span.line, from_x: span.from_x, to_x: x });
-          newLines.push({ line: span.line, from_x: x, to_x: span.to_x });
-        } else {
-          newLines.push(span);
-        }
-      }
-      if (newLines.length !== block.lines.length) {
-        const [left, right] = splitBlock(block, newLines);
-        newBlocks.push(left, right);
-      } else {
-        newBlocks.push({ ...block, lines: newLines });
-      }
-    }
-    setYard((prev) => ({ ...prev, blocks: newBlocks }));
-  }
-
-  function splitBlock(
-    block: YardBlock,
-    newLines: YardBlockSpan[]
-  ): [YardBlock, YardBlock] {
-    const mid = newLines[Math.floor(newLines.length / 2)].to_x;
-    const leftSpans = newLines.filter((l) => l.to_x <= mid);
-    const rightSpans = newLines.filter((l) => l.from_x >= mid);
-    return [
-      { ...block, id: block.id + "_L", lines: leftSpans },
-      { ...block, id: block.id + "_R", lines: rightSpans },
-    ];
   }
 
   function removeSelected() {
