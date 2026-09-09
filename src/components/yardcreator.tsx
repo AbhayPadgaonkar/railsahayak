@@ -35,6 +35,12 @@ const SIGNAL_NAMES: Record<SignalType, string> = {
   loop_exit: "Loop Exit",
 };
 
+const SECTIONS = [
+  { id: "A", name: "Section A", controller: "CCG-VR", stations: ["st_a1", "st_a2"] },
+  { id: "B", name: "Section B", controller: "VR-VLSD", stations: ["st_b1", "st_b2"] },
+  { id: "C", name: "Section C", controller: "VR-BL", stations: ["st_c1", "st_c2"] },
+] as const;
+
 const GRID = 100;
 const CANVAS_W = 1000;
 const CANVAS_H = 408;
@@ -67,6 +73,8 @@ export default function YardCreator() {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [previewLine, setPreviewLine] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string>("A");
+  const [selectedStation, setSelectedStation] = useState<string>("st_a1");
 
   const getSvgCoords = useCallback((e: React.MouseEvent) => {
     const svg = svgRef.current;
@@ -290,14 +298,38 @@ export default function YardCreator() {
       {/* Top Bar */}
       <div className="flex items-center gap-2 px-4 py-2 bg-gray-900 border-b border-gray-700">
         <h1 className="text-sm font-bold mr-4">Yard Layout Creator</h1>
+        <label className="text-xs text-gray-400">Section:</label>
+        <select
+          className="bg-gray-800 text-xs px-2 py-1 rounded border border-gray-600"
+          value={selectedSection}
+          onChange={(e) => {
+            const sec = SECTIONS.find((s) => s.id === e.target.value);
+            setSelectedSection(e.target.value);
+            if (sec) {
+              setSelectedStation(sec.stations[0]);
+              setYard((p) => ({ ...p, station_id: sec.stations[0], station_name: sec.name }));
+            }
+          }}
+        >
+          {SECTIONS.map((s) => (
+            <option key={s.id} value={s.id}>{s.name} ({s.controller})</option>
+          ))}
+        </select>
+        <label className="text-xs text-gray-400 ml-2">Station:</label>
+        <select
+          className="bg-gray-800 text-xs px-2 py-1 rounded border border-gray-600"
+          value={selectedStation}
+          onChange={(e) => {
+            setSelectedStation(e.target.value);
+            setYard((p) => ({ ...p, station_id: e.target.value }));
+          }}
+        >
+          {SECTIONS.find((s) => s.id === selectedSection)?.stations.map((st) => (
+            <option key={st} value={st}>{st}</option>
+          ))}
+        </select>
         <input
-          className="bg-gray-800 text-xs px-2 py-1 rounded border border-gray-600 w-32"
-          value={yard.station_id}
-          onChange={(e) => setYard((p) => ({ ...p, station_id: e.target.value }))}
-          placeholder="Station ID"
-        />
-        <input
-          className="bg-gray-800 text-xs px-2 py-1 rounded border border-gray-600 w-40"
+          className="bg-gray-800 text-xs px-2 py-1 rounded border border-gray-600 w-40 ml-2"
           value={yard.station_name}
           onChange={(e) => setYard((p) => ({ ...p, station_name: e.target.value }))}
           placeholder="Station Name"

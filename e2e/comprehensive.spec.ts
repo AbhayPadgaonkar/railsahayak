@@ -281,9 +281,8 @@ test.describe("Yard Creator", () => {
 // =============================================================================
 
 test.describe("Cross-Section RBAC", () => {
-  test("section A controller can access st_a1 sensors", async ({ page }) => {
+  test("section A controller can access st_a1 sensors", async () => {
     const session = await login("CCG-VR", "ccgvr123");
-    await injectSession(page, session);
     const req = await request.newContext({ baseURL: API_URL });
     const resp = await req.get("/sensors?station=st_a1", {
       headers: { Authorization: `Bearer ${session.token}` },
@@ -291,7 +290,7 @@ test.describe("Cross-Section RBAC", () => {
     expect(resp.ok()).toBeTruthy();
   });
 
-  test("section A controller denied st_b1 sensors", async ({ page }) => {
+  test("section A controller denied st_b1 sensors", async () => {
     const session = await login("CCG-VR", "ccgvr123");
     const req = await request.newContext({ baseURL: API_URL });
     const resp = await req.get("/sensors?station=st_b1", {
@@ -300,7 +299,7 @@ test.describe("Cross-Section RBAC", () => {
     expect(resp.status()).toBe(403);
   });
 
-  test("section B controller can access st_b1 sensors", async ({ page }) => {
+  test("section B controller can access st_b1 sensors", async () => {
     const session = await login("VR-VLSD", "vrvlsd123");
     const req = await request.newContext({ baseURL: API_URL });
     const resp = await req.get("/sensors?station=st_b1", {
