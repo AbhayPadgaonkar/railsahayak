@@ -383,6 +383,8 @@ export interface WhatIfRunParams {
   current_time?: number;
   gradient?: Gradient | null;
   condition?: string | null;
+  turnout_id?: string | null;
+  block_failure_id?: string | null;
 }
 
 export interface WhatIfMovement {
