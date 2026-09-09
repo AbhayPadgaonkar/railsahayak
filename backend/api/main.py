@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.advisory import router as advisory_router
+from backend.api.alert_api import router as alert_router
 from backend.api.audit_api import router as audit_router
 from backend.api.auth_api import router as auth_router
 from backend.api.chat_api import router as chat_router
@@ -41,6 +42,7 @@ app.include_router(sensor_router)
 app.include_router(yard_router)
 app.include_router(auth_router)
 app.include_router(advisory_router)
+app.include_router(alert_router)
 app.include_router(audit_router)
 app.include_router(crisis_router)
 app.include_router(whatif_router)

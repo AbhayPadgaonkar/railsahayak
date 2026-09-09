@@ -78,6 +78,10 @@ def reset_database() -> None:
         db.session.delete_many()
     except prisma.errors.TableNotFoundError:
         pass
+    try:
+        db.alert.delete_many()
+    except prisma.errors.TableNotFoundError:
+        pass
 
 
 def migrate() -> None:
