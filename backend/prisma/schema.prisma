@@ -48,3 +48,18 @@ model Session {
   section       String
   created_at    Float
 }
+
+model Alert {
+  id          Int     @id @default(autoincrement())
+  alert_type  String
+  severity    String
+  title       String
+  description String
+  station_id  String?
+  block_id    String?
+  train_id    String?
+  section     String
+  status      String  @default("active")
+  created_at  Float
+  resolved_at Float?
+}
