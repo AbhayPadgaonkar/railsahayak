@@ -1,6 +1,7 @@
 """Alert persistence API endpoints."""
 import time
 
+import prisma.errors
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -83,7 +84,7 @@ def resolve_alert(payload: AlertResolve):
             where={"id": payload.alert_id},
             data={"status": "resolved", "resolved_at": now},
         )
-    except Exception:
+    except prisma.errors.RecordNotFoundError:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"resolved_at": now}
 
@@ -93,6 +94,6 @@ def delete_alert(alert_id: int):
     db = get_client()
     try:
         db.alert.delete(where={"id": alert_id})
-    except Exception:
+    except prisma.errors.RecordNotFoundError:
         raise HTTPException(status_code=404, detail="Alert not found")
     return {"deleted": True}
