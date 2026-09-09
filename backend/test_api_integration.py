@@ -10,7 +10,7 @@ from backend.api.main import app
 client = TestClient(app)
 
 # Tokens for each controller
-TOKENS = {}
+TOKENS: dict[str, str] = {}
 
 
 def _login(controller_id: str, password: str) -> str:
